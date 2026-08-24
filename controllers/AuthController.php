@@ -5,22 +5,25 @@ require_once __DIR__ . '/../core/Session.php';
 require_once __DIR__ . '/../models/User.php';
 require_once __DIR__ . '/../models/Otp.php';
 require_once __DIR__ . '/../models/PasswordReset.php';
+require_once __DIR__ . '/../models/Society.php';
 require_once __DIR__ . '/../services/NotificationService.php';
 
 class AuthController extends Controller {
     private $userModel;
     private $otpModel;
     private $passwordResetModel;
+    private $societyModel;
 
     public function __construct() {
         $this->userModel = new User();
         $this->otpModel = new Otp();
         $this->passwordResetModel = new PasswordReset();
+        $this->societyModel = new Society();
     }
 
     public function register() {
         if (Session::has('user_id')) {
-            $this->redirect('/dashboard');
+            $this->redirectBasedOnRegistration(Session::get('user_id'));
         }
         $this->view('auth/register');
     }
@@ -173,7 +176,7 @@ class AuthController extends Controller {
 
     public function login() {
         if (Session::has('user_id')) {
-            $this->redirect('/dashboard');
+            $this->redirectBasedOnRegistration(Session::get('user_id'));
         }
         $this->view('auth/login');
     }
@@ -205,10 +208,21 @@ class AuthController extends Controller {
             Session::set('society_name', $user['society_name']);
             Session::set('mobile_number', $user['mobile_number']);
 
-            $this->redirect('/dashboard');
+            // Directly redirect user on first login / uncompleted registration
+            $this->redirectBasedOnRegistration($user['id']);
         } else {
             Session::setFlash('error', "Invalid mobile number or password.");
             $this->redirect('/login');
+        }
+    }
+
+    private function redirectBasedOnRegistration($userId) {
+        $society = $this->societyModel->findByUserId($userId);
+        if (!$society || empty($society['pan_number']) || empty($society['registered_address'])) {
+            Session::setFlash('info', "Welcome! Please complete your society registration and opening setup first.");
+            $this->redirect('/registration');
+        } else {
+            $this->redirect('/dashboard');
         }
     }
 
