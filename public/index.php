@@ -28,17 +28,32 @@ try {
     // Define Dashboard Route
     $app->get('/dashboard', ['DashboardController', 'index']);
 
-    // Define Society Module Routes
+    // Define Society Module Routes (with route aliases for seamless navigation)
     $app->get('/registration', ['SocietyController', 'registration']);
+    $app->get('/society-registration', ['SocietyController', 'registration']);
+    $app->get('/society/registration', ['SocietyController', 'registration']);
+
     $app->get('/members', ['SocietyController', 'members']);
+    $app->get('/society/members', ['SocietyController', 'members']);
+
     $app->get('/notices', ['SocietyController', 'notices']);
+    $app->get('/society/notices', ['SocietyController', 'notices']);
+
     $app->get('/vehicles', ['SocietyController', 'vehicles']);
+    $app->get('/society/vehicles', ['SocietyController', 'vehicles']);
 
     // Define Finance Module Routes
     $app->get('/maintenance', ['FinanceController', 'maintenance']);
+    $app->get('/finance/maintenance', ['FinanceController', 'maintenance']);
+
     $app->get('/payments', ['FinanceController', 'payments']);
+    $app->get('/finance/payments', ['FinanceController', 'payments']);
+
     $app->get('/expenses', ['FinanceController', 'expenses']);
+    $app->get('/finance/expenses', ['FinanceController', 'expenses']);
+
     $app->get('/reports', ['FinanceController', 'reports']);
+    $app->get('/finance/reports', ['FinanceController', 'reports']);
 
     // Dispatch Application Router
     $app->run();
