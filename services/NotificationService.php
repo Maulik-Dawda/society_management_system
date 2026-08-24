@@ -9,21 +9,24 @@ class NotificationService {
      */
     public static function sendOtp($mobile, $otp) {
         $message = "Your Meridian Heights verification OTP is: {$otp}. Valid for 10 minutes.";
-
-        // Format country code (default to +91 for India if 10 digits)
         $formattedMobile = self::formatMobileNumber($mobile);
+
+        // Generate 100% Free WhatsApp Direct Link (wa.me)
+        $cleanDigits = preg_replace('/[^0-9]/', '', $formattedMobile);
+        $freeWaLink = "https://api.whatsapp.com/send?phone={$cleanDigits}&text=" . urlencode($message);
 
         $results = [
             'sms' => self::dispatchSms($formattedMobile, $message),
-            'whatsapp' => self::dispatchWhatsApp($formattedMobile, $message)
+            'whatsapp' => self::dispatchWhatsApp($formattedMobile, $message),
+            'free_whatsapp_link' => $freeWaLink
         ];
 
-        // Save session log for UI notification preview and debugging
         Session::set('last_simulated_otp', [
             'mobile' => $mobile,
             'code' => $otp,
             'time' => date('Y-m-d H:i:s'),
             'message' => $message,
+            'free_whatsapp_link' => $freeWaLink,
             'dispatch_results' => $results
         ]);
 
@@ -39,9 +42,11 @@ class NotificationService {
         $setupUrl = "{$protocol}://{$host}/set-password?token={$token}";
 
         $smsMessage = "Meridian Heights CHS: Registration verified! Set your password here: {$setupUrl}";
-        $waMessage = "Hello! Welcome to Meridian Heights Society Manager. Set your password to complete registration: {$setupUrl}";
+        $waMessage = "Hello! Welcome to Meridian Heights Society Manager. Set your password here: {$setupUrl}";
 
         $formattedMobile = self::formatMobileNumber($mobile);
+        $cleanDigits = preg_replace('/[^0-9]/', '', $formattedMobile);
+        $freeWaLink = "https://api.whatsapp.com/send?phone={$cleanDigits}&text=" . urlencode($waMessage);
 
         $smsResult = self::dispatchSms($formattedMobile, $smsMessage);
         $waResult = self::dispatchWhatsApp($formattedMobile, $waMessage);
@@ -51,6 +56,7 @@ class NotificationService {
             'url' => $setupUrl,
             'sms' => $smsMessage,
             'whatsapp' => $waMessage,
+            'free_whatsapp_link' => $freeWaLink,
             'sms_result' => $smsResult,
             'whatsapp_result' => $waResult,
             'timestamp' => date('Y-m-d H:i:s')
@@ -62,14 +68,17 @@ class NotificationService {
     }
 
     /**
-     * Dispatch SMS using available active SMS gateways (Twilio, Fast2SMS, MSG91)
+     * Dispatch SMS using available active SMS gateways (Free Android HTTP SMS, Twilio, Fast2SMS, MSG91)
      */
     private static function dispatchSms($mobile, $message) {
+        $httpSmsServer = getenv('HTTP_SMS_SERVER'); // Free Android SIM SMS Gateway
         $twilioSid = getenv('TWILIO_ACCOUNT_SID');
         $fast2smsKey = getenv('FAST2SMS_API_KEY');
         $msg91Key = getenv('MSG91_AUTH_KEY');
 
-        if (!empty($twilioSid)) {
+        if (!empty($httpSmsServer)) {
+            return self::sendHttpSmsAndroid($mobile, $message);
+        } elseif (!empty($twilioSid)) {
             return self::sendTwilioSms($mobile, $message);
         } elseif (!empty($fast2smsKey)) {
             return self::sendFast2Sms($mobile, $message);
@@ -77,23 +86,41 @@ class NotificationService {
             return self::sendMsg91Sms($mobile, $message);
         }
 
-        return ['status' => 'simulated', 'message' => 'No active SMS gateway API key set in .env'];
+        return ['status' => 'free_direct', 'message' => 'Using Free Direct WhatsApp & On-Screen Notification'];
     }
 
     /**
-     * Dispatch WhatsApp message using active WhatsApp gateways (Twilio, Meta WhatsApp API)
+     * Dispatch WhatsApp message using active WhatsApp gateways (Meta 1000 Free Tier, Twilio)
      */
     private static function dispatchWhatsApp($mobile, $message) {
-        $twilioSid = getenv('TWILIO_ACCOUNT_SID');
         $metaToken = getenv('META_WA_ACCESS_TOKEN');
+        $twilioSid = getenv('TWILIO_ACCOUNT_SID');
 
-        if (!empty($twilioSid)) {
-            return self::sendTwilioWhatsApp($mobile, $message);
-        } elseif (!empty($metaToken)) {
+        if (!empty($metaToken)) {
             return self::sendMetaWhatsApp($mobile, $message);
+        } elseif (!empty($twilioSid)) {
+            return self::sendTwilioWhatsApp($mobile, $message);
         }
 
-        return ['status' => 'simulated', 'message' => 'No active WhatsApp API key set in .env'];
+        return ['status' => 'free_direct', 'message' => 'Using Free Direct wa.me WhatsApp API Link'];
+    }
+
+    /**
+     * Free Android Phone SIM SMS Gateway (HTTP SMS App)
+     */
+    private static function sendHttpSmsAndroid($to, $message) {
+        $serverUrl = getenv('HTTP_SMS_SERVER'); // e.g. https://api.httpsms.com/v1/messages/send
+        $apiKey = getenv('HTTP_SMS_API_KEY');
+
+        $data = [
+            'content' => $message,
+            'recipient' => $to
+        ];
+
+        return self::makeCurlRequest($serverUrl, json_encode($data), [
+            "x-api-key: {$apiKey}",
+            "Content-Type: application/json"
+        ], 'POST');
     }
 
     /**
@@ -132,7 +159,6 @@ class NotificationService {
             return ['status' => 'error', 'message' => 'Incomplete Twilio WhatsApp credentials'];
         }
 
-        // Add whatsapp: prefix
         $from = (strpos($fromWa, 'whatsapp:') === 0) ? $fromWa : 'whatsapp:' . $fromWa;
         $toWa = (strpos($to, 'whatsapp:') === 0) ? $to : 'whatsapp:' . $to;
 
@@ -153,7 +179,6 @@ class NotificationService {
      */
     private static function sendFast2Sms($to, $message) {
         $apiKey = getenv('FAST2SMS_API_KEY');
-        // Clean mobile number (keep only 10 digits for Fast2SMS)
         $cleanNum = preg_replace('/[^0-9]/', '', $to);
         if (strlen($cleanNum) > 10) {
             $cleanNum = substr($cleanNum, -10);
@@ -192,7 +217,7 @@ class NotificationService {
     }
 
     /**
-     * Send WhatsApp via Meta Cloud API
+     * Send WhatsApp via Meta Cloud API (1,000 Free Messages / Month)
      */
     private static function sendMetaWhatsApp($to, $message) {
         $phoneId = getenv('META_WA_PHONE_NUMBER_ID');
@@ -214,7 +239,7 @@ class NotificationService {
     }
 
     /**
-     * Utility to format mobile numbers (defaults to +91 if 10 digit Indian number)
+     * Format mobile number with country code (+91 default for 10 digits)
      */
     private static function formatMobileNumber($mobile) {
         $clean = preg_replace('/[^0-9]/', '', $mobile);
