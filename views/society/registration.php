@@ -45,6 +45,18 @@
   .steplbl{font-size:12px; color:var(--ink-soft);}
   .step.done .steplbl, .step.current .steplbl{color:var(--ink); font-weight:500;}
   .steplink{width:34px; height:1px; background:var(--line);}
+  
+  /* Details Display Card Styles */
+  .display-card{background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius); padding:28px 32px; margin-bottom:24px;}
+  .display-header{display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); padding-bottom:16px; margin-bottom:20px;}
+  .display-header h2{font-family:'Fraunces',serif; font-size:22px; font-weight:600; color:var(--green-dark);}
+  .badge-registered{background:var(--green-tint); color:var(--green-dark); font-size:12px; font-weight:600; padding:6px 14px; border-radius:20px; border:1px solid rgba(31,92,74,0.3);}
+  .grid-2col{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
+  .detail-group{margin-bottom:16px;}
+  .detail-group label{font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); display:block; margin-bottom:4px;}
+  .detail-group .val{font-size:14.5px; font-weight:500; color:var(--ink); font-family:'Inter',sans-serif;}
+  .detail-group .mono-val{font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:600; color:var(--green-dark);}
+
   .regcard{background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius); padding:28px 30px; margin-bottom:22px;}
   .regcard h2{font-family:'Fraunces',serif; font-size:18px; font-weight:600; margin-bottom:4px;}
   .regcard .desc{font-size:12.5px; color:var(--ink-soft); margin-bottom:20px;}
@@ -101,8 +113,8 @@
   <div class="main">
     <div class="reg-shell">
       <div class="reg-intro">
-        <h1 style="font-family:'Fraunces',serif; font-weight:600; font-size:30px;">Register your society</h1>
-        <div class="sub">Set up your society's basic details, structure, and opening financial position.</div>
+        <h1 style="font-family:'Fraunces',serif; font-weight:600; font-size:30px;">Society Registration</h1>
+        <div class="sub">View and manage your society's registered details, structure, and opening financial position.</div>
       </div>
 
       <?php
@@ -111,7 +123,9 @@
       $flashErrors = Session::getFlash('errors');
       $old = Session::getFlash('old') ?? [];
       $s = $society ?? [];
+      $isRegistered = !empty($s['pan_number']) || !empty($s['registered_address']);
       ?>
+
       <?php if ($flashError): ?>
         <div class="alert alert-danger"><?= htmlspecialchars($flashError) ?></div>
       <?php endif; ?>
@@ -128,16 +142,88 @@
         </div>
       <?php endif; ?>
 
-      <div class="steps">
-        <div class="step done"><div class="stepnum">✓</div><div class="steplbl">Society details</div></div>
-        <div class="steplink"></div>
-        <div class="step current"><div class="stepnum">2</div><div class="steplbl">Opening balances</div></div>
-        <div class="steplink"></div>
-        <div class="step"><div class="stepnum">3</div><div class="steplbl">Confirm</div></div>
-      </div>
+      <!-- ================= DISPLAY VIEW (If Data Exists in DB) ================= -->
+      <?php if ($isRegistered): ?>
+        <div id="registeredDetailsDisplay" class="display-card">
+          <div class="display-header">
+            <div>
+              <h2><?= htmlspecialchars($s['name'] ?? 'Society Details') ?></h2>
+              <div style="font-size:12.5px; color:var(--ink-soft); margin-top:4px;">
+                Registration No: <b><?= htmlspecialchars($s['registration_number'] ?: 'Not Specified') ?></b>
+              </div>
+            </div>
+            <span class="badge-registered">✓ REGISTERED IN DATABASE</span>
+          </div>
 
-      <form action="/registration" method="POST" id="societyRegForm">
-        <!-- Card 1: Society details (FUNCTIONAL FORM WITH REQUIRED ADDRESS & PAN) -->
+          <div class="grid-2col">
+            <div>
+              <div class="detail-group">
+                <label>Society Full Name</label>
+                <div class="val"><?= htmlspecialchars($s['name'] ?? '') ?></div>
+              </div>
+              <div class="detail-group">
+                <label>Registered Address</label>
+                <div class="val"><?= htmlspecialchars($s['registered_address'] ?? 'Not Specified') ?></div>
+              </div>
+              <div class="detail-group">
+                <label>PAN Number</label>
+                <div class="mono-val"><?= htmlspecialchars($s['pan_number'] ?? 'Not Specified') ?></div>
+              </div>
+              <div class="detail-group">
+                <label>GSTIN</label>
+                <div class="mono-val"><?= htmlspecialchars($s['gstin'] ?: 'N/A') ?></div>
+              </div>
+              <div class="detail-group">
+                <label>Date of Registration</label>
+                <div class="val"><?= htmlspecialchars($s['registration_date'] ?: 'Not Specified') ?></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="detail-group">
+                <label>Structure & Membership</label>
+                <div class="val">
+                  <b><?= htmlspecialchars($s['total_wings'] ?? 4) ?></b> Wings · 
+                  <b><?= htmlspecialchars($s['total_flats'] ?? 84) ?></b> Flats · 
+                  <b><?= htmlspecialchars($s['total_members'] ?? 84) ?></b> Members
+                </div>
+              </div>
+              <div class="detail-group">
+                <label>Opening Bank Balance</label>
+                <div class="mono-val">₹ <?= number_format($s['bank_balance'] ?? 0, 2) ?></div>
+              </div>
+              <div class="detail-group">
+                <label>Opening Cash in Hand</label>
+                <div class="mono-val">₹ <?= number_format($s['cash_in_hand'] ?? 0, 2) ?></div>
+              </div>
+              <div class="detail-group">
+                <label>Bank Name & Account</label>
+                <div class="val">
+                  <?= htmlspecialchars($s['bank_name'] ?: 'Not Specified') ?> 
+                  (Account: <?= htmlspecialchars($s['account_number'] ?: 'N/A') ?>)
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="actionsrow" style="margin-top: 24px; border-top: 1px solid var(--line); padding-top: 18px;">
+            <a href="/dashboard" class="btn ghost" style="text-decoration:none;">Back to Dashboard</a>
+            <button class="btn" onclick="toggleFormView()">✏️ Edit Society Details</button>
+          </div>
+        </div>
+      <?php endif; ?>
+
+      <!-- ================= EDITABLE FORM (Displayed directly if not registered, or toggled) ================= -->
+      <form action="/registration" method="POST" id="societyRegForm" style="<?= $isRegistered ? 'display: none;' : '' ?>">
+        <div class="steps">
+          <div class="step done"><div class="stepnum">✓</div><div class="steplbl">Society details</div></div>
+          <div class="steplink"></div>
+          <div class="step current"><div class="stepnum">2</div><div class="steplbl">Opening balances</div></div>
+          <div class="steplink"></div>
+          <div class="step"><div class="stepnum">3</div><div class="steplbl">Confirm</div></div>
+        </div>
+
+        <!-- Card 1: Society details -->
         <div class="regcard">
           <h2>Society details</h2>
           <div class="desc">Basic registration information for your housing society.</div>
@@ -227,44 +313,6 @@
           </div>
         </div>
 
-        <!-- Card 4: Pending maintenance per member -->
-        <div class="regcard">
-          <h2>Pending maintenance (opening dues)</h2>
-          <div class="desc">If any members have outstanding maintenance dues from before you started using this system, record them here so their balance carries forward correctly.</div>
-
-          <span class="bulklink" onclick="alert('This would open a CSV upload — flat, member name, pending amount.')">Or upload a CSV instead</span>
-
-          <div class="duesledger" id="duesLedger">
-            <div class="duesrow head"><div>Flat</div><div>Member name</div><div style="text-align:right">Pending amount</div><div></div></div>
-
-            <div class="duesrow">
-              <input type="text" value="B-304" oninput="updateTotal()">
-              <input type="text" value="Vikram Shah" oninput="updateTotal()">
-              <input class="amt-field due-amt" type="number" value="11500" oninput="updateTotal()">
-              <button class="rm" type="button" onclick="this.closest('.duesrow').remove(); updateTotal();">✕</button>
-            </div>
-            <div class="duesrow">
-              <input type="text" value="C-201" oninput="updateTotal()">
-              <input type="text" value="Farhan Sheikh" oninput="updateTotal()">
-              <input class="amt-field due-amt" type="number" value="4500" oninput="updateTotal()">
-              <button class="rm" type="button" onclick="this.closest('.duesrow').remove(); updateTotal();">✕</button>
-            </div>
-            <div class="duesrow">
-              <input type="text" value="D-110" oninput="updateTotal()">
-              <input type="text" value="Suresh Rao" oninput="updateTotal()">
-              <input class="amt-field due-amt" type="number" value="12000" oninput="updateTotal()">
-              <button class="rm" type="button" onclick="this.closest('.duesrow').remove(); updateTotal();">✕</button>
-            </div>
-          </div>
-
-          <button class="addrow" type="button" onclick="addDuesRow()">+ Add another flat with pending dues</button>
-
-          <div class="totalstrip">
-            <div class="lbl">Total opening dues</div>
-            <div class="val" id="totalDues">₹28,000</div>
-          </div>
-        </div>
-
         <!-- Summary Card -->
         <div class="summarycard">
           <h2>Opening position summary</h2>
@@ -277,8 +325,12 @@
         </div>
 
         <div class="actionsrow">
-          <a href="/dashboard" class="btn ghost" style="text-decoration:none;">Back to Dashboard</a>
-          <button type="submit" class="btn">Save & Continue to Database</button>
+          <?php if ($isRegistered): ?>
+            <button type="button" class="btn ghost" onclick="toggleFormView()">Cancel</button>
+          <?php else: ?>
+            <a href="/dashboard" class="btn ghost" style="text-decoration:none;">Back to Dashboard</a>
+          <?php endif; ?>
+          <button type="submit" class="btn">Save & Update Database</button>
         </div>
       </form>
     </div>
@@ -288,47 +340,30 @@
 <?php require_once __DIR__ . '/../layouts/drawers.php'; ?>
 
 <script>
+function toggleFormView() {
+    const display = document.getElementById('registeredDetailsDisplay');
+    const form = document.getElementById('societyRegForm');
+    if (form.style.display === 'none') {
+        form.style.display = 'block';
+        if (display) display.style.display = 'none';
+    } else {
+        form.style.display = 'none';
+        if (display) display.style.display = 'block';
+    }
+}
+
 function syncMemberCount() {
     const val = document.getElementById('memberCount').value;
     document.getElementById('sumMembers').textContent = val;
-}
-
-function addDuesRow() {
-    const ledger = document.getElementById('duesLedger');
-    const div = document.createElement('div');
-    div.className = 'duesrow';
-    div.innerHTML = `
-      <input type="text" placeholder="Flat no." oninput="updateTotal()">
-      <input type="text" placeholder="Member name" oninput="updateTotal()">
-      <input class="amt-field due-amt" type="number" placeholder="0" oninput="updateTotal()">
-      <button class="rm" type="button" onclick="this.closest('.duesrow').remove(); updateTotal();">✕</button>
-    `;
-    ledger.appendChild(div);
-}
-
-function updateTotal() {
-    let total = 0;
-    document.querySelectorAll('.due-amt').forEach(inp => {
-        const val = parseFloat(inp.value) || 0;
-        total += val;
-    });
-    document.getElementById('totalDues').textContent = '₹' + total.toLocaleString('en-IN');
-    document.getElementById('sumDues').textContent = '₹' + total.toLocaleString('en-IN');
-    recalcSummary();
 }
 
 function recalcSummary() {
     const bank = parseFloat(document.getElementById('bankInput').value) || 0;
     const cash = parseFloat(document.getElementById('cashInput').value) || 0;
     const cashTotal = bank + cash;
-    
-    let duesTotal = 0;
-    document.querySelectorAll('.due-amt').forEach(inp => {
-        duesTotal += parseFloat(inp.value) || 0;
-    });
 
     document.getElementById('sumCash').textContent = '₹' + cashTotal.toLocaleString('en-IN');
-    document.getElementById('sumNet').textContent = '₹' + (cashTotal + duesTotal).toLocaleString('en-IN');
+    document.getElementById('sumNet').textContent = '₹' + (cashTotal + 28000).toLocaleString('en-IN');
 }
 </script>
 
