@@ -1,0 +1,8 @@
+# Ignored files and folders
+.DS_Store
+Thumbs.db
+*.log
+vendor/
+.env
+.idea/
+.vscode/

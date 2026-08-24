@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Meridian Heights CHS — Society Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F3F1E9; --paper-raised:#FFFEFA; --ink:#23281F; --ink-soft:#5B5F52;
+    --line:#DAD5C4; --green:#1F5C4A; --green-dark:#123D31; --green-tint:#E4EDE7;
+    --gold:#B9812A; --gold-tint:#F5E9D2; --rust:#B14A2E; --rust-tint:#F4E1D8; --radius:10px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--paper); color:var(--ink); font-family:'Inter',sans-serif;}
+
+  /* ---------- app shell ---------- */
+  .app{display:flex; min-height:100vh;}
+  .sidebar{width:230px; background:var(--green-dark); color:#EFE9DA; flex-shrink:0; padding:26px 18px; display:flex; flex-direction:column;}
+  .sidebar .brand{font-family:'Fraunces',serif; font-weight:600; font-size:16px; letter-spacing:.02em; margin-bottom:2px;}
+  .sidebar .subbrand{font-size:11px; color:#9FB3A8; margin-bottom:30px;}
+  .navgroup{margin-bottom:22px;}
+  .navlabel{font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; color:#7C9488; padding:0 12px; margin-bottom:8px;}
+  .navitem{display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px; font-size:13.5px; font-weight:500; color:#D9E5DD; cursor:pointer; margin-bottom:2px;}
+  .navitem .ic{width:18px; text-align:center; font-size:14px; opacity:.85;}
+  .navitem:hover{background:rgba(255,255,255,.06);}
+  .navitem.active{background:#EFE9DA; color:var(--green-dark);}
+  .navitem.active .ic{opacity:1;}
+  .langswitch{display:flex; border:1px solid rgba(255,255,255,.18); border-radius:8px; overflow:hidden; margin-bottom:18px;}
+  .langswitch div{flex:1; text-align:center; padding:8px 6px; font-size:12px; font-weight:500; cursor:pointer; color:#B9C7BE;}
+  .langswitch div.active{background:#EFE9DA; color:var(--green-dark);}
+  .sidebar-foot{margin-top:auto; padding-top:16px; border-top:1px solid rgba(255,255,255,.12); font-size:11.5px; color:#9FB3A8; display:flex; align-items:center; gap:8px;}
+  .avatar{width:26px; height:26px; border-radius:50%; background:var(--gold); color:#fff; display:flex; align-items:center; justify-content:center; font-family:'Fraunces',serif; font-weight:600; font-size:11px; flex-shrink:0;}
+
+  .main{flex:1; padding:32px 40px 80px; overflow-x:hidden;}
+  .content-wrap{max-width:1180px; margin:0 auto;}
+
+  .page{display:none;}
+  .page.active{display:block;}
+
+  .topbar{display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:28px; border-bottom:1.5px solid var(--ink); padding-bottom:18px;}
+  .topbar h1{font-family:'Fraunces',serif; font-weight:600; font-size:32px;}
+  .topbar .meta{text-align:right; font-size:12.5px; color:var(--ink-soft); line-height:1.6;}
+  .topbar .meta b{color:var(--ink); font-weight:500;}
+
+  .stats{display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line); border:1px solid var(--line); margin-bottom:24px; border-radius:var(--radius); overflow:hidden;}
+  .stat{background:var(--paper-raised); padding:18px 20px;}
+  .stat .label{font-size:11.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-soft); margin-bottom:8px;}
+  .stat .val{font-family:'Fraunces',serif; font-size:26px; font-weight:600;}
+  .stat.warn .val{color:var(--rust);}
+  .stat .sub{font-size:12px; color:var(--ink-soft); margin-top:4px;}
+
+  .barwrap{background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius); padding:16px 20px; margin-bottom:24px; display:flex; align-items:center; gap:16px;}
+  .barwrap .lbl{font-size:12.5px; color:var(--ink-soft); white-space:nowrap;}
+  .bar{flex:1; height:8px; background:var(--line); border-radius:6px; overflow:hidden;}
+  .bar .fill{height:100%; background:var(--green); width:78%;}
+  .barwrap .pct{font-family:'Fraunces',serif; font-weight:600; font-size:15px; white-space:nowrap;}
+
+  .tabs{display:flex; gap:4px; margin-bottom:16px; border-bottom:1px solid var(--line);}
+  .tab{font-size:13.5px; font-weight:500; padding:10px 18px; color:var(--ink-soft); cursor:pointer; border-bottom:2px solid transparent;}
+  .tab.active{color:var(--green-dark); border-bottom-color:var(--green);}
+
+  .controls{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:12px;}
+  .chips{display:flex; gap:8px; flex-wrap:wrap;}
+  .chip{font-size:12.5px; padding:6px 13px; border-radius:20px; border:1px solid var(--line); background:var(--paper-raised); color:var(--ink-soft); cursor:pointer;}
+  .chip.active{background:var(--green); border-color:var(--green); color:#fff;}
+  .search{font-size:13px; border:1px solid var(--line); background:var(--paper-raised); border-radius:8px; padding:9px 12px; width:200px;}
+  .search:focus{outline:none; border-color:var(--green);}
+  .right-controls{display:flex; gap:10px; align-items:center;}
+  .btn{border:none; font-family:'Inter',sans-serif; font-weight:500; font-size:13.5px; padding:11px 20px; border-radius:var(--radius); cursor:pointer; white-space:nowrap; background:var(--green); color:#fff;}
+  .btn:hover{background:var(--green-dark);}
+  .btn.ghost{background:var(--paper-raised); color:var(--ink); border:1px solid var(--line);}
+  .btn.ghost:hover{border-color:var(--ink-soft);}
+
+  .ledger{background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; margin-bottom:8px;}
+  .lrow{display:grid; align-items:center; padding:14px 20px; border-bottom:1px solid var(--line); gap:10px;}
+  .lrow:last-child{border-bottom:none;}
+  .lrow.head{background:var(--green-tint); font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--green-dark); font-weight:600; padding:11px 20px;}
+  .lrow:not(.head):hover{background:#FAF8F1;}
+  .date{font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--ink-soft);}
+  .flat{font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:500;}
+  .owner{font-size:13.5px; font-weight:500;}
+  .owner .sub{display:block; font-size:11.5px; color:var(--ink-soft); font-weight:400; margin-top:2px;}
+  .cat{font-size:13.5px; font-weight:500;}
+  .cat .sub{display:block; font-size:11.5px; color:var(--ink-soft); font-weight:400; margin-top:2px;}
+  .vendor, .contact, .area, .type, .slot{font-size:12.5px; color:var(--ink-soft);}
+  .bill, .ref, .plate{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink-soft);}
+  .plate{background:var(--paper); border:1px solid var(--line); border-radius:5px; padding:4px 8px; text-align:center; width:fit-content; font-size:13px;}
+  .amt{font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:500; text-align:right;}
+  .amt.due{color:var(--rust); font-weight:500;}
+  .mode{font-size:12.5px; color:var(--ink-soft); display:flex; align-items:center; gap:6px;}
+  .dot{width:6px; height:6px; border-radius:50%; background:var(--green);}
+  .dot.gold{background:var(--gold);}
+  .status, .badge{font-size:11px; padding:4px 10px; border-radius:20px; text-align:center; font-weight:500; width:fit-content;}
+  .status.paid, .status.settled, .status.active, .badge.owner-occ{background:var(--green-tint); color:var(--green-dark);}
+  .status.pending, .status.partial, .status.processing, .status.expiring, .badge.rented{background:var(--gold-tint); color:var(--gold);}
+  .status.rejected, .status.overdue, .status.failed{background:var(--rust-tint); color:var(--rust);}
+  .clip{width:34px; height:34px; border-radius:6px; border:1px solid var(--line); display:flex; align-items:center; justify-content:center; cursor:pointer; transform:rotate(-4deg); background:#fff; font-size:14px; color:var(--ink-soft);}
+  .clip:hover{border-color:var(--green);}
+  .rowbtn{font-size:11.5px; padding:6px 10px; border-radius:7px; border:1px solid var(--line); background:#fff; color:var(--green-dark); cursor:pointer;}
+  .rowbtn:hover{border-color:var(--green);}
+
+  .sectionhead{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; margin-top:32px;}
+  .sectionhead h3{font-family:'Fraunces',serif; font-size:18px; font-weight:600;}
+  .sectionhead .note{font-size:12.5px; color:var(--ink-soft);}
+
+  .cars{font-size:12.5px; color:var(--ink-soft); display:flex; align-items:center; gap:5px;}
+  .cars .n{font-family:'IBM Plex Mono',monospace; font-weight:500; color:var(--ink);}
+
+  /* ---------- drawers (shared) ---------- */
+  .overlay{position:fixed; inset:0; background:rgba(35,40,31,.35); display:none; align-items:stretch; justify-content:flex-end; z-index:50;}
+  .overlay.open{display:flex;}
+  .drawer{width:440px; background:var(--paper-raised); height:100%; padding:28px 30px; overflow-y:auto; box-shadow:-6px 0 24px rgba(0,0,0,.12); position:relative;}
+  .drawer h2{font-family:'Fraunces',serif; font-weight:600; font-size:22px; margin-bottom:4px;}
+  .drawer .hint{font-size:12.5px; color:var(--ink-soft); margin-bottom:22px;}
+  .close-btn{position:absolute; top:26px; right:26px; background:none; border:none; font-size:20px; color:var(--ink-soft); cursor:pointer;}
+  .field{margin-bottom:16px;}
+  .field label{display:block; font-size:12px; font-weight:500; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); margin-bottom:6px;}
+  .field input, .field select, .field textarea{width:100%; border:1px solid var(--line); background:var(--paper); border-radius:7px; padding:10px 12px; font-family:'Inter',sans-serif; font-size:13.5px; color:var(--ink);}
+  .field input:focus, .field select:focus, .field textarea:focus{outline:none; border-color:var(--green);}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .row3{display:grid; grid-template-columns:1fr 1fr 0.7fr; gap:10px;}
+  .radiogrp{display:flex; gap:8px;}
+  .radiogrp label{flex:1; border:1px solid var(--line); border-radius:7px; padding:9px; text-align:center; font-size:12.5px; cursor:pointer; background:var(--paper);}
+  .radiogrp input{display:none;}
+  .radiogrp input:checked + span{color:var(--green); font-weight:500;}
+  .save-btn{width:100%; background:var(--green); color:#fff; border:none; padding:13px; border-radius:8px; font-weight:500; font-size:14px; cursor:pointer; margin-top:8px;}
+  .save-btn:hover{background:var(--green-dark);}
+  .upload{border:1.5px dashed var(--line); border-radius:8px; padding:20px; text-align:center; font-size:12.5px; color:var(--ink-soft); cursor:pointer; background:var(--paper);}
+  .upload:hover{border-color:var(--green); color:var(--green);}
+  .preview{display:flex; gap:10px; margin-top:12px;}
+  .thumb{width:56px; height:56px; background:#fff; border:1px solid var(--line); border-radius:6px; transform:rotate(-3deg); display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--ink-soft); text-align:center; box-shadow:0 2px 4px rgba(0,0,0,.08);}
+  .total-row{display:flex; justify-content:space-between; padding:12px 0; border-top:1px solid var(--line); margin-top:4px; font-family:'Fraunces',serif; font-size:16px; font-weight:600;}
+  .modetoggle{display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; margin-bottom:20px;}
+  .modetoggle div{flex:1; text-align:center; padding:10px; font-size:13px; font-weight:500; cursor:pointer; color:var(--ink-soft);}
+  .modetoggle div.active{background:var(--green); color:#fff;}
+  .duebox{background:var(--gold-tint); border:1px solid var(--line); border-radius:8px; padding:14px 16px; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center;}
+  .duebox .lbl{font-size:12px; color:var(--gold); text-transform:uppercase; letter-spacing:.05em;}
+  .duebox .amt2{font-family:'Fraunces',serif; font-size:20px; font-weight:600; color:var(--ink);}
+  .linkbox{background:var(--paper); border:1px dashed var(--line); border-radius:8px; padding:14px; font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink-soft); margin-bottom:16px; word-break:break-all;}
+  .sectionlbl{font-family:'Fraunces',serif; font-size:14px; font-weight:600; color:var(--green-dark); margin:24px 0 12px; padding-top:20px; border-top:1px solid var(--line);}
+  .sectionlbl:first-of-type{margin-top:0; padding-top:0; border-top:none;}
+  .rentcheck{display:flex; align-items:center; gap:10px; background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:13px 14px; margin-bottom:6px; cursor:pointer;}
+  .rentcheck input{width:18px; height:18px; accent-color:var(--green); cursor:pointer;}
+  .rentcheck .txt{font-size:13.5px; font-weight:500;}
+  .rentcheck .txt .sub{display:block; font-size:11.5px; font-weight:400; color:var(--ink-soft); margin-top:1px;}
+  .tenantbox{background:var(--gold-tint); border:1px solid var(--line); border-radius:8px; padding:16px; margin:10px 0 18px; display:none;}
+  .tenantbox.show{display:block;}
+  .tenantbox .tlbl{font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--gold); font-weight:600; margin-bottom:12px;}
+  .tenantbox .field input, .tenantbox .field select{background:#fff;}
+  .carrow{border:1px solid var(--line); border-radius:8px; padding:14px; margin-bottom:10px; background:var(--paper); position:relative;}
+  .carrow .rm{position:absolute; top:10px; right:10px; background:none; border:none; color:var(--ink-soft); font-size:14px; cursor:pointer;}
+  .carrow .rm:hover{color:var(--rust);}
+  .addcar{width:100%; border:1.5px dashed var(--line); background:none; border-radius:8px; padding:12px; font-size:13px; color:var(--ink-soft); cursor:pointer; margin-bottom:18px;}
+  .addcar:hover{border-color:var(--green); color:var(--green);}
+
+  /* receipt modal */
+  .modal-overlay{position:fixed; inset:0; background:rgba(35,40,31,.4); display:none; align-items:center; justify-content:center; z-index:60;}
+  .modal-overlay.open{display:flex;}
+  .receipt{width:360px; background:#fff; border-radius:4px; position:relative; box-shadow:0 12px 32px rgba(0,0,0,.18);}
+  .receipt-top{padding:24px 26px 18px; border-bottom:1.5px dashed var(--line);}
+  .receipt-top .rbrand{font-family:'Fraunces',serif; font-weight:600; font-size:14px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft);}
+  .receipt-top .rtitle{font-family:'Fraunces',serif; font-weight:600; font-size:20px; margin-top:4px;}
+  .stamp{position:absolute; top:20px; right:24px; border:2px solid var(--green); color:var(--green); font-family:'Fraunces',serif; font-weight:600; font-size:13px; padding:4px 10px; border-radius:6px; transform:rotate(8deg); letter-spacing:.05em;}
+  .receipt-body{padding:18px 26px;}
+  .rline{display:flex; justify-content:space-between; font-size:13px; padding:6px 0; color:var(--ink-soft);}
+  .rline b{color:var(--ink); font-weight:500;}
+  .rtotal{display:flex; justify-content:space-between; align-items:center; padding:16px 26px; background:var(--paper); border-top:1px dashed var(--line);}
+  .rtotal .lbl{font-family:'Fraunces',serif; font-size:14px; font-weight:600;}
+  .rtotal .val{font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:500;}
+  .rfoot{padding:14px 26px 22px; text-align:center; font-size:11px; color:var(--ink-soft);}
+  .rclose{position:absolute; top:-14px; right:-14px; width:32px; height:32px; border-radius:50%; background:var(--ink); color:#fff; border:none; cursor:pointer; font-size:15px;}
+
+  /* ---------- society registration page ---------- */
+  .reg-shell{max-width:840px; margin:0 auto;}
+  .reg-intro{text-align:center; margin-bottom:8px;}
+  .reg-intro .sub{font-size:13px; color:var(--ink-soft); margin-top:6px;}
+  .steps{display:flex; align-items:center; justify-content:center; gap:6px; margin:24px 0 32px;}
+  .step{display:flex; align-items:center; gap:8px;}
+  .stepnum{width:26px; height:26px; border-radius:50%; background:var(--line); color:var(--ink-soft); font-size:12px; font-weight:600; display:flex; align-items:center; justify-content:center; font-family:'Fraunces',serif;}
+  .step.done .stepnum{background:var(--green); color:#fff;}
+  .step.current .stepnum{background:var(--gold); color:#fff;}
+  .steplbl{font-size:12px; color:var(--ink-soft);}
+  .step.done .steplbl, .step.current .steplbl{color:var(--ink); font-weight:500;}
+  .steplink{width:34px; height:1px; background:var(--line);}
+  .regcard{background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius); padding:28px 30px; margin-bottom:22px;}
+  .regcard h2{font-family:'Fraunces',serif; font-size:18px; font-weight:600; margin-bottom:4px;}
+  .regcard .desc{font-size:12.5px; color:var(--ink-soft); margin-bottom:20px;}
+  .row3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px;}
+  .helptext{font-size:11.5px; color:var(--ink-soft); margin-top:5px;}
+  .balancegrid{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:6px;}
+  .balancecard{border:1px solid var(--line); border-radius:8px; padding:16px 18px; background:var(--paper);}
+  .balancecard .lbl{font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); margin-bottom:8px; display:flex; align-items:center; gap:6px;}
+  .balancecard .amtinput{font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:500; border:none; background:none; width:100%; color:var(--ink); padding:0;}
+  .balancecard .amtinput:focus{outline:none;}
+  .balancecard .sub{font-size:11.5px; color:var(--ink-soft); margin-top:4px;}
+  .duesledger{background:var(--paper); border:1px solid var(--line); border-radius:8px; overflow:hidden; margin-bottom:14px;}
+  .duesrow{display:grid; grid-template-columns:90px 1fr 130px 40px; gap:10px; align-items:center; padding:10px 14px; border-bottom:1px solid var(--line);}
+  .duesrow:last-child{border-bottom:none;}
+  .duesrow.head{background:var(--green-tint); font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--green-dark); font-weight:600; padding:9px 14px;}
+  .duesrow input{border:1px solid var(--line); background:#fff; border-radius:6px; padding:7px 9px; font-size:13px; font-family:'Inter',sans-serif; width:100%;}
+  .duesrow input.amt-field{font-family:'IBM Plex Mono',monospace; text-align:right;}
+  .duesrow .rm{background:none; border:none; color:var(--ink-soft); cursor:pointer; font-size:14px;}
+  .duesrow .rm:hover{color:var(--rust);}
+  .addrow{width:100%; border:1.5px dashed var(--line); background:none; border-radius:8px; padding:11px; font-size:13px; color:var(--ink-soft); cursor:pointer; margin-bottom:16px;}
+  .addrow:hover{border-color:var(--green); color:var(--green);}
+  .totalstrip{display:flex; justify-content:space-between; align-items:center; background:var(--gold-tint); border:1px solid var(--line); border-radius:8px; padding:14px 18px;}
+  .totalstrip .lbl{font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--gold);}
+  .totalstrip .val{font-family:'Fraunces',serif; font-size:22px; font-weight:600;}
+  .bulklink{font-size:12px; color:var(--green-dark); text-decoration:underline; cursor:pointer; margin-bottom:16px; display:inline-block;}
+  .summarycard{background:var(--green-dark); color:#EFE9DA; border-radius:var(--radius); padding:24px 28px; margin-bottom:24px;}
+  .summarycard h2{font-family:'Fraunces',serif; font-size:16px; font-weight:600; margin-bottom:16px; color:#fff;}
+  .summarygrid{display:grid; grid-template-columns:repeat(4,1fr); gap:16px;}
+  .summarygrid .item .lbl{font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:#9FB3A8; margin-bottom:6px;}
+  .summarygrid .item .val{font-family:'Fraunces',serif; font-size:19px; font-weight:600; color:#fff;}
+  .actionsrow{display:flex; justify-content:space-between; gap:12px; margin-top:8px;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ===== Sidebar ===== -->
+  <div class="sidebar">
+    <div class="brand" data-i18n="brand">Meridian Heights</div>
+    <div class="subbrand" data-i18n="subbrand">Cooperative Housing Society</div>
+
+    <div class="langswitch">
+      <div class="active" data-lang-btn="en" onclick="setLang('en')">English</div>
+      <div data-lang-btn="gu" onclick="setLang('gu')">ગુજરાતી</div>
+    </div>
+
+    <div class="navgroup">
+      <div class="navlabel" data-i18n="nav_overview">Overview</div>
+      <div class="navitem active" data-page="dashboard"><span class="ic">◆</span><span data-i18n="nav_dashboard">Dashboard</span></div>
+    </div>
+
+    <div class="navgroup">
+      <div class="navlabel" data-i18n="nav_setup">Setup</div>
+      <div class="navitem" data-page="registration"><span class="ic">⚙</span><span data-i18n="nav_registration">Society registration</span></div>
+    </div>
+
+    <div class="navgroup">
+      <div class="navlabel" data-i18n="nav_society">Society</div>
+      <div class="navitem" data-page="members"><span class="ic">☰</span><span data-i18n="nav_members">Members</span></div>
+      <div class="navitem" data-page="notices"><span class="ic">▤</span><span data-i18n="nav_notices">Notice board</span></div>
+      <div class="navitem" data-page="vehicles"><span class="ic">▭</span><span data-i18n="nav_vehicles">Vehicles</span></div>
+    </div>
+
+    <div class="navgroup">
+      <div class="navlabel" data-i18n="nav_finance">Finance</div>
+      <div class="navitem" data-page="maintenance"><span class="ic">%</span><span data-i18n="nav_maintenance">Maintenance</span></div>
+      <div class="navitem" data-page="payments"><span class="ic">₹</span><span data-i18n="nav_payments">Payments</span></div>
+      <div class="navitem" data-page="expenses"><span class="ic">–</span><span data-i18n="nav_expenses">Expenses</span></div>
+      <div class="navitem" data-page="reports"><span class="ic">▤</span><span data-i18n="nav_reports">Reports & Tally</span></div>
+    </div>
+
+    <div class="sidebar-foot">
+      <div class="avatar">TR</div>
+      <div data-i18n="role">Treasurer · Admin</div>
+    </div>
+  </div>
+
+  <!-- ===== Main ===== -->
+  <div class="main">
+    <div class="content-wrap">
+
+      <!-- ============ SOCIETY REGISTRATION ============ -->
+      <section class="page" id="page-registration">
+        <div class="reg-shell">
+          <div class="reg-intro">
+            <h1 style="font-family:'Fraunces',serif; font-weight:600; font-size:30px;" data-i18n="title_registration">Register your society</h1>
+            <div class="sub" data-i18n="reg_sub">Set up your society's basic details, structure, and opening financial position.</div>
+          </div>
+
+          <div class="steps">
+            <div class="step done"><div class="stepnum">✓</div><div class="steplbl">Society details</div></div>
+            <div class="steplink"></div>
+            <div class="step current"><div class="stepnum">2</div><div class="steplbl">Opening balances</div></div>
+            <div class="steplink"></div>
+            <div class="step"><div class="stepnum">3</div><div class="steplbl">Confirm</div></div>
+          </div>
+
+          <!-- Society details -->
+          <div class="regcard">
+            <h2>Society details</h2>
+            <div class="desc">Basic registration information for your housing society.</div>
+            <div class="field"><label>Society name</label><input type="text" value="Meridian Heights Cooperative Housing Society"></div>
+            <div class="row2">
+              <div class="field"><label>Registration number</label><input type="text" placeholder="e.g. GUJ/AHM/HSG/2014/1123"></div>
+              <div class="field"><label>Date of registration</label><input type="date"></div>
+            </div>
+            <div class="field"><label>Registered address</label><input type="text" placeholder="Building name, street, city, state, PIN"></div>
+            <div class="row2">
+              <div class="field"><label>PAN</label><input type="text" placeholder="AAAAA0000A"></div>
+              <div class="field"><label>GSTIN (if applicable)</label><input type="text" placeholder="24AAAAA0000A1Z5"></div>
+            </div>
+          </div>
+
+          <!-- Structure & members -->
+          <div class="regcard">
+            <h2>Structure & membership</h2>
+            <div class="desc">How your society is organised, and how many members it has.</div>
+            <div class="row3">
+              <div class="field"><label>Number of wings / buildings</label><input type="number" value="4"></div>
+              <div class="field"><label>Total flats / units</label><input type="number" value="84"></div>
+              <div class="field"><label>Total number of members</label><input type="number" id="memberCount" value="84" oninput="syncMemberCount()"></div>
+            </div>
+            <div class="helptext" style="margin-top:-6px;">This should match your total flats unless some units are vacant or unsold. You can add individual member records later from the Members page.</div>
+          </div>
+
+          <!-- Opening balances -->
+          <div class="regcard">
+            <h2>Opening balances</h2>
+            <div class="desc">Enter your society's cash and bank position as on the date you're starting this system.</div>
+            <div class="field"><label>Balances as on</label><input type="date" value="2026-08-21" style="max-width:220px;"></div>
+
+            <div class="balancegrid">
+              <div class="balancecard">
+                <div class="lbl">🏦 Bank balance</div>
+                <input class="amtinput" type="number" placeholder="0.00" value="418200">
+                <div class="sub">Enter bank name & account below</div>
+              </div>
+              <div class="balancecard">
+                <div class="lbl">💵 Cash in hand</div>
+                <input class="amtinput" type="number" placeholder="0.00" value="12500">
+                <div class="sub">Petty cash held by treasurer</div>
+              </div>
+            </div>
+
+            <div class="row2" style="margin-top:16px;">
+              <div class="field"><label>Bank name</label><input type="text" placeholder="e.g. HDFC Bank"></div>
+              <div class="field"><label>Account number</label><input type="text" placeholder="····4471"></div>
+            </div>
+          </div>
+
+          <!-- Pending maintenance per member -->
+          <div class="regcard">
+            <h2>Pending maintenance (opening dues)</h2>
+            <div class="desc">If any members have outstanding maintenance dues from before you started using this system, record them here so their balance carries forward correctly.</div>
+
+            <span class="bulklink" onclick="alert('This would open a CSV upload — flat, member name, pending amount.')">Or upload a CSV instead</span>
+
+            <div class="duesledger" id="duesLedger">
+              <div class="duesrow head"><div>Flat</div><div>Member name</div><div style="text-align:right">Pending amount</div><div></div></div>
+
+              <div class="duesrow">
+                <input type="text" value="B-304" oninput="updateTotal()">
+                <input type="text" value="Vikram Shah" oninput="updateTotal()">
+                <input class="amt-field due-amt" type="number" value="11500" oninput="updateTotal()">
+                <button class="rm" onclick="this.closest('.duesrow').remove(); updateTotal();">✕</button>
+              </div>
+              <div class="duesrow">
+                <input type="text" value="C-201" oninput="updateTotal()">
+                <input type="text" value="Farhan Sheikh" oninput="updateTotal()">
+                <input class="amt-field due-amt" type="number" value="4500" oninput="updateTotal()">
+                <button class="rm" onclick="this.closest('.duesrow').remove(); updateTotal();">✕</button>
+              </div>
+              <div class="duesrow">
+                <input type="text" value="D-110" oninput="updateTotal()">
+                <input type="text" value="Suresh Rao" oninput="updateTotal()">
+                <input class="amt-field due-amt" type="number" value="12000" oninput="updateTotal()">
+                <button class="rm" onclick="this.closest('.duesrow').remove(); updateTotal();">✕</button>
+              </div>
+            </div>
+
+            <button class="addrow" onclick="addDuesRow()">+ Add another flat with pending dues</button>
+
+            <div class="totalstrip">
+              <div class="lbl">Total opening dues</div>
+              <div class="val" id="totalDues">₹28,000</div>
+            </div>
+          </div>
+
+          <!-- Summary -->
+          <div class="summarycard">
+            <h2>Opening position summary</h2>
+            <div class="summarygrid">
+              <div class="item"><div class="lbl">Total members</div><div class="val" id="sumMembers">84</div></div>
+              <div class="item"><div class="lbl">Bank + cash</div><div class="val" id="sumCash">₹4,30,700</div></div>
+              <div class="item"><div class="lbl">Pending dues</div><div class="val" id="sumDues">₹28,000</div></div>
+              <div class="item"><div class="lbl">Net opening position</div><div class="val" id="sumNet">₹4,58,700</div></div>
+            </div>
+          </div>
+
+          <div class="actionsrow">
+            <button class="btn ghost">Back</button>
+            <button class="btn" onclick="finalizeSetup()">Save & continue</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ DASHBOARD ============ -->
+      <section class="page active" id="page-dashboard">
+        <div class="topbar">
+          <h1 data-i18n="title_dashboard">Dashboard</h1>
+          <div class="meta">Friday, 21 Aug 2026<br><b>84</b> flats · 4 wings</div>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="label">Collected this month</div><div class="val">₹6,55,200</div><div class="sub">78% of billed</div></div>
+          <div class="stat warn"><div class="label">Maintenance due</div><div class="val">₹1,84,800</div><div class="sub">23 flats pending</div></div>
+          <div class="stat"><div class="label">Expenses this month</div><div class="val">₹1,84,200</div><div class="sub">18 entries · 4 pending approval</div></div>
+          <div class="stat"><div class="label">Vehicles on record</div><div class="val">112</div><div class="sub">98 / 110 parking slots used</div></div>
+        </div>
+        <div class="sectionhead" style="margin-top:8px;"><h3>Quick actions</h3></div>
+        <div class="controls" style="margin-bottom:24px;">
+          <div class="chips">
+            <div class="chip" onclick="goTo('payments')">＋ Collect payment</div>
+            <div class="chip" onclick="goTo('maintenance')">＋ Generate bill</div>
+            <div class="chip" onclick="goTo('expenses')">＋ Add expense</div>
+            <div class="chip" onclick="goTo('vehicles')">＋ Register vehicle</div>
+            <div class="chip" onclick="goTo('notices')">＋ Post notice</div>
+          </div>
+        </div>
+        <div class="sectionhead"><h3>Recent activity</h3><div class="note">Last 24 hours</div></div>
+        <div class="ledger">
+          <div class="lrow head" style="grid-template-columns:120px 1fr 130px;"><div>Time</div><div>Activity</div><div>Module</div></div>
+          <div class="lrow" style="grid-template-columns:120px 1fr 130px;"><div class="date">9:14 AM</div><div class="owner">Rekha Iyer (A-102) paid ₹10,000 via UPI</div><div class="contact">Payments</div></div>
+          <div class="lrow" style="grid-template-columns:120px 1fr 130px;"><div class="date">Yesterday</div><div class="owner">CleanPro Services bill of ₹42,000 awaiting approval</div><div class="contact">Expenses</div></div>
+          <div class="lrow" style="grid-template-columns:120px 1fr 130px;"><div class="date">Yesterday</div><div class="owner">Ramesh (guest) checked in to visit A-408</div><div class="contact">Vehicles</div></div>
+        </div>
+      </section>
+
+      <!-- ============ MEMBERS ============ -->
+      <section class="page" id="page-members">
+        <div class="topbar">
+          <h1 data-i18n="title_members">Members</h1>
+          <div class="meta">4 wings · 84 flats<br><b>84</b> members on record</div>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="label">Total members</div><div class="val">84</div><div class="sub">across 4 wings</div></div>
+          <div class="stat"><div class="label">Owner-occupied</div><div class="val">61</div><div class="sub">73% of flats</div></div>
+          <div class="stat"><div class="label">On rent</div><div class="val">23</div><div class="sub">27% of flats</div></div>
+          <div class="stat"><div class="label">Vehicles registered</div><div class="val">112</div><div class="sub">via member records</div></div>
+        </div>
+        <div class="controls">
+          <div class="chips">
+            <div class="chip active">All members</div>
+            <div class="chip">Owner-occupied</div>
+            <div class="chip">On rent</div>
+            <div class="chip">Wing A</div>
+            <div class="chip">Wing B</div>
+          </div>
+          <div class="right-controls">
+            <input class="search" placeholder="Search flat or name">
+            <button class="btn" onclick="document.getElementById('memberform').classList.add('open')"><span data-i18n="btn_add_member">+ Add member</span></button>
+          </div>
+        </div>
+        <div class="ledger">
+          <div class="lrow head" style="grid-template-columns:70px 1.1fr 1fr 90px 1fr 60px;"><div>Flat</div><div>Owner</div><div>Contact</div><div style="text-align:center">Type</div><div>Vehicles</div><div></div></div>
+          <div class="lrow" style="grid-template-columns:70px 1.1fr 1fr 90px 1fr 60px;">
+            <div class="flat">A-102</div><div class="owner">Rekha Iyer<span class="sub">Owner · 980 sq.ft</span></div><div class="contact">+91 98200 11234</div>
+            <div style="display:flex; justify-content:center"><span class="badge owner-occ">Owner-occ.</span></div><div class="cars"><span class="n">1</span> · Maruti Swift</div><div><button class="rowbtn">Edit</button></div>
+          </div>
+          <div class="lrow" style="grid-template-columns:70px 1.1fr 1fr 90px 1fr 60px;">
+            <div class="flat">B-304</div><div class="owner">Vikram Shah<span class="sub">Tenant · owner: Anil Mehta</span></div><div class="contact">+91 90210 88345</div>
+            <div style="display:flex; justify-content:center"><span class="badge rented">On rent</span></div><div class="cars"><span class="n">1</span> · Honda Activa</div><div><button class="rowbtn">Edit</button></div>
+          </div>
+          <div class="lrow" style="grid-template-columns:70px 1.1fr 1fr 90px 1fr 60px;">
+            <div class="flat">C-201</div><div class="owner">Farhan Sheikh<span class="sub">Owner · 1050 sq.ft</span></div><div class="contact">+91 99870 45671</div>
+            <div style="display:flex; justify-content:center"><span class="badge owner-occ">Owner-occ.</span></div><div class="cars"><span class="n">2</span> · Creta, Activa</div><div><button class="rowbtn">Edit</button></div>
+          </div>
+          <div class="lrow" style="grid-template-columns:70px 1.1fr 1fr 90px 1fr 60px;">
+            <div class="flat">A-408</div><div class="owner">Neha Kulkarni<span class="sub">Tenant · owner: R. Kulkarni</span></div><div class="contact">+91 97400 33218</div>
+            <div style="display:flex; justify-content:center"><span class="badge rented">On rent</span></div><div class="cars"><span class="n">0</span> · none</div><div><button class="rowbtn">Edit</button></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ NOTICE BOARD (placeholder) ============ -->
+      <section class="page" id="page-notices">
+        <div class="topbar">
+          <h1 data-i18n="title_notices">Notice board</h1>
+          <div class="meta">4 wings · 84 flats</div>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="label">Active notices</div><div class="val">6</div><div class="sub">2 marked urgent</div></div>
+          <div class="stat"><div class="label">Posted this month</div><div class="val">11</div><div class="sub">avg. 82% read rate</div></div>
+          <div class="stat"><div class="label">Unread by residents</div><div class="val">17</div><div class="sub">across all notices</div></div>
+          <div class="stat"><div class="label">Circulars attached</div><div class="val">4</div><div class="sub">PDF documents</div></div>
+        </div>
+        <div class="ledger">
+          <div class="lrow head" style="grid-template-columns:100px 1fr 110px 100px;"><div>Date</div><div>Notice</div><div style="text-align:center">Category</div><div style="text-align:center">Read</div></div>
+          <div class="lrow" style="grid-template-columns:100px 1fr 110px 100px;"><div class="date">20 Aug</div><div class="cat">Water supply shutdown on 23 Aug, 10am–2pm<span class="sub">Maintenance work on the main line</span></div><div style="text-align:center"><span class="status rejected">Urgent</span></div><div style="text-align:center" class="contact">61 / 84</div></div>
+          <div class="lrow" style="grid-template-columns:100px 1fr 110px 100px;"><div class="date">18 Aug</div><div class="cat">Ganesh Chaturthi celebration — RSVP<span class="sub">Clubhouse, 27 Aug 6pm onward</span></div><div style="text-align:center"><span class="status paid">Event</span></div><div style="text-align:center" class="contact">74 / 84</div></div>
+          <div class="lrow" style="grid-template-columns:100px 1fr 110px 100px;"><div class="date">12 Aug</div><div class="cat">AGM minutes — July 2026<span class="sub">Circular attached</span></div><div style="text-align:center"><span class="status pending">General</span></div><div style="text-align:center" class="contact">55 / 84</div></div>
+        </div>
+        <div style="margin-top:20px;"><button class="btn"><span data-i18n="btn_post_notice">+ Post notice</span></button></div>
+      </section>
+
+      <!-- ============ VEHICLES ============ -->
+      <section class="page" id="page-vehicles">
+        <div class="topbar">
+          <h1 data-i18n="title_vehicles">Vehicles</h1>
+          <div class="meta">4 wings · 84 flats<br><b>112</b> vehicles on record</div>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="label">Registered vehicles</div><div class="val">112</div><div class="sub">76 cars · 36 two-wheelers</div></div>
+          <div class="stat"><div class="label">Parking slots used</div><div class="val">98 / 110</div><div class="sub">12 slots free</div></div>
+          <div class="stat"><div class="label">Guest vehicles today</div><div class="val">7</div><div class="sub">3 currently inside</div></div>
+          <div class="stat"><div class="label">Stickers expiring</div><div class="val">5</div><div class="sub">within 30 days</div></div>
+        </div>
+        <div class="tabs">
+          <div class="tab active">Registered vehicles</div>
+          <div class="tab">Visitor log</div>
+        </div>
+        <div class="controls">
+          <div class="chips">
+            <div class="chip active">All wings</div>
+            <div class="chip">Car</div>
+            <div class="chip">Two-wheeler</div>
+            <div class="chip">Sticker expiring</div>
+          </div>
+          <button class="btn" onclick="document.getElementById('regform').classList.add('open')"><span data-i18n="btn_register_vehicle">+ Register vehicle</span></button>
+        </div>
+        <div class="ledger">
+          <div class="lrow head" style="grid-template-columns:70px 1fr 130px 90px 100px 110px 60px;"><div>Flat</div><div>Owner</div><div>Vehicle no.</div><div>Type</div><div>Slot</div><div style="text-align:center">Sticker</div><div></div></div>
+          <div class="lrow" style="grid-template-columns:70px 1fr 130px 90px 100px 110px 60px;">
+            <div class="flat">A-102</div><div class="owner">Rekha Iyer<span class="sub">Maruti Swift · White</span></div><div class="plate">MH 04 AB 3312</div><div class="type">Car</div><div class="slot">A-P14</div>
+            <div style="text-align:center"><span class="status active">Valid</span></div><div><button class="rowbtn">Edit</button></div>
+          </div>
+          <div class="lrow" style="grid-template-columns:70px 1fr 130px 90px 100px 110px 60px;">
+            <div class="flat">B-304</div><div class="owner">Anil Mehta<span class="sub">Honda Activa · Black</span></div><div class="plate">MH 04 CD 9081</div><div class="type">Two-wheeler</div><div class="slot">B-P07</div>
+            <div style="text-align:center"><span class="status expiring">Expiring</span></div><div><button class="rowbtn">Renew</button></div>
+          </div>
+          <div class="lrow" style="grid-template-columns:70px 1fr 130px 90px 100px 110px 60px;">
+            <div class="flat">C-201</div><div class="owner">Farhan Sheikh<span class="sub">Hyundai Creta · Grey</span></div><div class="plate">MH 04 EF 5527</div><div class="type">Car</div><div class="slot">C-P02</div>
+            <div style="text-align:center"><span class="status active">Valid</span></div><div><button class="rowbtn">Edit</button></div>
+          </div>
+        </div>
+        <div class="sectionhead"><h3>Today's visitor log</h3><div class="note">21 Aug 2026</div></div>
+        <div class="ledger">
+          <div class="lrow head" style="grid-template-columns:80px 1fr 120px 100px 100px;"><div>Time</div><div>Visitor / vehicle</div><div>Visiting</div><div>Status</div><div></div></div>
+          <div class="lrow" style="grid-template-columns:80px 1fr 120px 100px 100px;"><div class="date">10:12 AM</div><div class="owner">Swiggy delivery<span class="sub">MH 04 XY 0021 · Bike</span></div><div class="type">B-304</div><div><span class="status active">Exited</span></div><div></div></div>
+          <div class="lrow" style="grid-template-columns:80px 1fr 120px 100px 100px;"><div class="date">11:40 AM</div><div class="owner">Ramesh (guest)<span class="sub">MH 04 QW 7712 · Car</span></div><div class="type">A-408</div><div><span class="status expiring">Inside</span></div><div><button class="rowbtn">Mark exit</button></div></div>
+        </div>
+      </section>
+
+      <!-- ============ MAINTENANCE ============ -->
+      <section class="page" id="page-maintenance">
+        <div class="topbar">
+          <h1 data-i18n="title_maintenance">Maintenance</h1>
+          <div class="meta">Billing cycle <b>Aug 2026</b><br>84 flats · 4 wings</div>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="label">Billed this cycle</div><div class="val">₹8,40,000</div><div class="sub">84 bills raised</div></div>
+          <div class="stat"><div class="label">Collected</div><div class="val">₹6,55,200</div><div class="sub">61 flats paid</div></div>
+          <div class="stat warn"><div class="label">Outstanding</div><div class="val">₹1,84,800</div><div class="sub">23 flats due</div></div>
+          <div class="stat warn"><div class="label">Overdue &gt; 30 days</div><div class="val">9</div><div class="sub">flats, late fee applies</div></div>
+        </div>
+        <div class="barwrap"><div class="lbl">Collection progress</div><div class="bar"><div class="fill"></div></div><div class="pct">78%</div></div>
+        <div class="controls">
+          <div class="chips">
+            <div class="chip active">All wings</div><div class="chip">Wing A</div><div class="chip">Wing B</div><div class="chip">Wing C</div><div class="chip">Overdue only</div>
+          </div>
+          <div class="right-controls">
+            <button class="btn ghost" onclick="document.getElementById('remind').classList.add('open')"><span data-i18n="btn_send_reminders">Send reminders</span></button>
+            <button class="btn" onclick="document.getElementById('genbill').classList.add('open')"><span data-i18n="btn_generate_bill">+ Generate bill</span></button>
+          </div>
+        </div>
+        <div class="ledger">
+          <div class="lrow head" style="grid-template-columns:70px 1.1fr 90px 110px 110px 110px 130px 90px;"><div>Flat</div><div>Owner</div><div>Area</div><div style="text-align:right">Billed</div><div style="text-align:right">Due</div><div>Last paid</div><div style="text-align:center">Status</div><div></div></div>
+          <div class="lrow" style="grid-template-columns:70px 1.1fr 90px 110px 110px 110px 130px 90px;">
+            <div class="flat">A-102</div><div class="owner">Rekha Iyer<span class="sub">Owner-occupied</span></div><div class="area">980 sq.ft</div><div class="amt">₹10,000</div><div class="amt">₹0</div><div class="date">08 Aug</div>
+            <div style="text-align:center"><span class="status paid">Paid</span></div><div><button class="rowbtn">Receipt</button></div>
+          </div>
+          <div class="lrow" style="grid-template-columns:70px 1.1fr 90px 110px 110px 110px 130px 90px;">
+            <div class="flat">B-304</div><div class="owner">Vikram Shah<span class="sub">Tenant</span></div><div class="area">1150 sq.ft</div><div class="amt">₹11,500</div><div class="amt due">₹11,500</div><div class="date">—</div>
+            <div style="text-align:center"><span class="status overdue">Overdue</span></div><div><button class="rowbtn">Record</button></div>
+          </div>
+          <div class="lrow" style="grid-template-columns:70px 1.1fr 90px 110px 110px 110px 130px 90px;">
+            <div class="flat">C-201</div><div class="owner">Farhan Sheikh<span class="sub">Owner-occupied</span></div><div class="area">1050 sq.ft</div><div class="amt">₹10,500</div><div class="amt due">₹4,500</div><div class="date">02 Jul</div>
+            <div style="text-align:center"><span class="status partial">Partial</span></div><div><button class="rowbtn">Record</button></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ PAYMENTS ============ -->
+      <section class="page" id="page-payments">
+        <div class="topbar">
+          <h1 data-i18n="title_payments">Payments</h1>
+          <div class="meta">Bank account <b>HDFC ····4471</b><br>Gateway: Razorpay · Connected</div>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="label">Collected today</div><div class="val">₹1,04,200</div><div class="sub">9 transactions</div></div>
+          <div class="stat"><div class="label">Collected this month</div><div class="val">₹6,55,200</div><div class="sub">61 transactions</div></div>
+          <div class="stat"><div class="label">Processing</div><div class="val">₹8,400</div><div class="sub">1 gateway payment</div></div>
+          <div class="stat"><div class="label">Receipts issued</div><div class="val">61</div><div class="sub">this month</div></div>
+        </div>
+        <div class="tabs"><div class="tab active">All payments</div><div class="tab">Online</div><div class="tab">Manual entry</div></div>
+        <div class="controls">
+          <div class="chips">
+            <div class="chip active">All modes</div><div class="chip">UPI</div><div class="chip">Card</div><div class="chip">Bank transfer</div><div class="chip">Cash</div><div class="chip">Cheque</div>
+          </div>
+          <div class="right-controls">
+            <input class="search" placeholder="Search flat or owner">
+            <button class="btn" onclick="document.getElementById('collect').classList.add('open')"><span data-i18n="btn_collect_payment">+ Collect payment</span></button>
+          </div>
+        </div>
+        <div class="ledger">
+          <div class="lrow head" style="grid-template-columns:110px 70px 1fr 100px 100px 120px 90px 70px;"><div>Date</div><div>Flat</div><div>Owner</div><div style="text-align:right">Amount</div><div>Mode</div><div>Reference</div><div style="text-align:center">Status</div><div></div></div>
+          <div class="lrow" style="grid-template-columns:110px 70px 1fr 100px 100px 120px 90px 70px;">
+            <div class="date">21 Aug, 9:14 AM</div><div class="flat">A-102</div><div class="owner">Rekha Iyer<span class="sub">Aug maintenance</span></div><div class="amt">₹10,000</div>
+            <div class="mode"><span class="dot"></span>UPI</div><div class="ref">pay_HJ8x21Kp</div><div style="text-align:center"><span class="status settled">Settled</span></div><div><button class="rowbtn" onclick="openReceipt()">Receipt</button></div>
+          </div>
+          <div class="lrow" style="grid-template-columns:110px 70px 1fr 100px 100px 120px 90px 70px;">
+            <div class="date">20 Aug, 6:47 PM</div><div class="flat">D-301</div><div class="owner">Meera Nair<span class="sub">Aug maintenance</span></div><div class="amt">₹8,400</div>
+            <div class="mode"><span class="dot gold"></span>Card</div><div class="ref">pay_GQ4z90Lm</div><div style="text-align:center"><span class="status processing">Processing</span></div><div><button class="rowbtn" style="opacity:.5">Receipt</button></div>
+          </div>
+          <div class="lrow" style="grid-template-columns:110px 70px 1fr 100px 100px 120px 90px 70px;">
+            <div class="date">19 Aug, 4:12 PM</div><div class="flat">B-115</div><div class="owner">Kavita Joshi<span class="sub">Aug maintenance</span></div><div class="amt">₹9,200</div>
+            <div class="mode"><span class="dot"></span>Cheque</div><div class="ref">Chq #004521</div><div style="text-align:center"><span class="status failed">Bounced</span></div><div><button class="rowbtn">Follow up</button></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ EXPENSES ============ -->
+      <section class="page" id="page-expenses">
+        <div class="topbar">
+          <h1 data-i18n="title_expenses">Expenses</h1>
+          <div class="meta">Financial year <b>2026–27</b><br>12 categories · 27 vendors</div>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="label">This month</div><div class="val">₹1,84,200</div><div class="sub">18 entries</div></div>
+          <div class="stat warn"><div class="label">Pending approval</div><div class="val">₹32,500</div><div class="sub">4 bills waiting</div></div>
+          <div class="stat"><div class="label">Paid</div><div class="val">₹1,51,700</div><div class="sub">14 bills</div></div>
+          <div class="stat"><div class="label">Vendors on file</div><div class="val">27</div><div class="sub">3 added this month</div></div>
+        </div>
+        <div class="controls">
+          <div class="chips">
+            <div class="chip active">All categories</div><div class="chip">Electricity</div><div class="chip">Housekeeping</div><div class="chip">Lift AMC</div><div class="chip">Repairs</div>
+          </div>
+          <button class="btn" onclick="document.getElementById('overlay-exp').classList.add('open')"><span data-i18n="btn_add_expense">+ Add expense</span></button>
+        </div>
+        <div class="ledger">
+          <div class="lrow head" style="grid-template-columns:90px 1.1fr 1fr 100px 110px 110px 120px 60px;"><div>Date</div><div>Category</div><div>Vendor</div><div>Bill no.</div><div style="text-align:right">Amount</div><div style="text-align:center">Status</div><div>Mode</div><div></div></div>
+          <div class="lrow" style="grid-template-columns:90px 1.1fr 1fr 100px 110px 110px 120px 60px;">
+            <div class="date">14 Aug</div><div class="cat">Electricity<span class="sub">Common area · DHBVN</span></div><div class="vendor">DHBVN Ltd.</div><div class="bill">EL-0921</div>
+            <div class="amt">₹18,420</div><div style="text-align:center"><span class="status paid">Paid</span></div><div class="vendor">Bank</div><div class="clip">📎</div>
+          </div>
+          <div class="lrow" style="grid-template-columns:90px 1.1fr 1fr 100px 110px 110px 120px 60px;">
+            <div class="date">12 Aug</div><div class="cat">Housekeeping<span class="sub">Monthly contract</span></div><div class="vendor">CleanPro Services</div><div class="bill">HK-0442</div>
+            <div class="amt">₹42,000</div><div style="text-align:center"><span class="status pending">Pending</span></div><div class="vendor">—</div><div class="clip">📎</div>
+          </div>
+          <div class="lrow" style="grid-template-columns:90px 1.1fr 1fr 100px 110px 110px 120px 60px;">
+            <div class="date">10 Aug</div><div class="cat">Lift AMC<span class="sub">Quarterly service</span></div><div class="vendor">OTIS Elevators</div><div class="bill">AMC-118</div>
+            <div class="amt">₹27,850</div><div style="text-align:center"><span class="status paid">Paid</span></div><div class="vendor">UPI</div><div class="clip">📎</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ REPORTS & TALLY (placeholder) ============ -->
+      <section class="page" id="page-reports">
+        <div class="topbar">
+          <h1 data-i18n="title_reports">Reports &amp; Tally export</h1>
+          <div class="meta">Financial year <b>2026–27</b></div>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="label">Income this FY</div><div class="val">₹58.2L</div><div class="sub">Maintenance + other income</div></div>
+          <div class="stat"><div class="label">Expenses this FY</div><div class="val">₹41.6L</div><div class="sub">All categories</div></div>
+          <div class="stat"><div class="label">Vouchers pending export</div><div class="val">73</div><div class="sub">Not yet sent to Tally</div></div>
+          <div class="stat"><div class="label">Last export</div><div class="val">18 Aug</div><div class="sub">312 vouchers · no errors</div></div>
+        </div>
+        <div class="controls">
+          <div class="chips">
+            <div class="chip active">All vouchers</div><div class="chip">Receipts</div><div class="chip">Payments</div><div class="chip">Not yet exported</div>
+          </div>
+          <div class="right-controls">
+            <button class="btn ghost"><span data-i18n="btn_download_report">Download report (PDF)</span></button>
+            <button class="btn"><span data-i18n="btn_export_tally">Export to Tally XML</span></button>
+          </div>
+        </div>
+        <div class="ledger">
+          <div class="lrow head" style="grid-template-columns:100px 130px 1fr 110px 100px;"><div>Date</div><div>Voucher type</div><div>Ledger</div><div style="text-align:right">Amount</div><div style="text-align:center">Export</div></div>
+          <div class="lrow" style="grid-template-columns:100px 130px 1fr 110px 100px;"><div class="date">21 Aug</div><div class="vendor">Receipt</div><div class="owner">A-102 · Maintenance income</div><div class="amt">₹10,000</div><div style="text-align:center"><span class="status pending">Queued</span></div></div>
+          <div class="lrow" style="grid-template-columns:100px 130px 1fr 110px 100px;"><div class="date">14 Aug</div><div class="vendor">Payment</div><div class="owner">DHBVN Ltd. · Electricity expense</div><div class="amt">₹18,420</div><div style="text-align:center"><span class="status paid">Exported</span></div></div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<!-- ===================== DRAWERS ===================== -->
+
+<!-- Add member -->
+<div class="overlay" id="memberform">
+  <div class="drawer">
+    <button class="close-btn" onclick="document.getElementById('memberform').classList.remove('open')">✕</button>
+    <h2>Add member</h2>
+    <div class="hint">Flat, ownership, and vehicle details in one record.</div>
+    <div class="sectionlbl">Flat & owner details</div>
+    <div class="row2"><div class="field"><label>Flat number</label><input type="text" placeholder="e.g. A-102"></div><div class="field"><label>Area (sq.ft)</label><input type="number" placeholder="980"></div></div>
+    <div class="field"><label>Owner name</label><input type="text" placeholder="Full name"></div>
+    <div class="row2"><div class="field"><label>Owner phone</label><input type="text" placeholder="+91"></div><div class="field"><label>Owner email</label><input type="email" placeholder="name@email.com"></div></div>
+    <div class="sectionlbl">Occupancy</div>
+    <label class="rentcheck"><input type="checkbox" id="rentCheck" onchange="toggleRent()"><div class="txt">This flat is on rent<span class="sub">Check if a tenant occupies this flat instead of the owner</span></div></label>
+    <div class="tenantbox" id="tenantBox">
+      <div class="tlbl">Tenant details</div>
+      <div class="row2"><div class="field"><label>Tenant name</label><input type="text" placeholder="Full name"></div><div class="field"><label>Tenant phone</label><input type="text" placeholder="+91"></div></div>
+      <div class="row2"><div class="field"><label>Agreement start</label><input type="date"></div><div class="field"><label>Agreement end</label><input type="date"></div></div>
+      <div class="field"><label>ID proof</label><input type="text" placeholder="Aadhaar / Passport no."></div>
+    </div>
+    <div class="sectionlbl">Vehicle / car details</div>
+    <div class="carrow">
+      <button class="rm" onclick="this.closest('.carrow').remove()">✕</button>
+      <div class="row3"><div class="field"><label>Vehicle number</label><input type="text" placeholder="MH 04 AB 1234"></div><div class="field"><label>Make & model</label><input type="text" placeholder="e.g. Maruti Swift"></div><div class="field"><label>Type</label><select><option>Car</option><option>Two-wheeler</option></select></div></div>
+      <div class="row2"><div class="field"><label>Colour</label><input type="text" placeholder="e.g. White"></div><div class="field"><label>Parking slot</label><input type="text" placeholder="e.g. A-P14"></div></div>
+    </div>
+    <button class="addcar" onclick="addCar()">+ Add another vehicle</button>
+    <button class="save-btn" onclick="document.getElementById('memberform').classList.remove('open')">Save member</button>
+  </div>
+</div>
+
+<!-- Register vehicle -->
+<div class="overlay" id="regform">
+  <div class="drawer">
+    <button class="close-btn" onclick="document.getElementById('regform').classList.remove('open')">✕</button>
+    <h2>Register vehicle</h2>
+    <div class="hint">Add a resident's vehicle and assign a parking slot.</div>
+    <div class="field"><label>Flat</label><input type="text" placeholder="e.g. A-102"></div>
+    <div class="row2"><div class="field"><label>Vehicle type</label><select><option>Car</option><option>Two-wheeler</option></select></div><div class="field"><label>Parking slot</label><input type="text" placeholder="e.g. A-P14"></div></div>
+    <div class="field"><label>Vehicle number</label><input type="text" placeholder="MH 04 AB 1234"></div>
+    <div class="row2"><div class="field"><label>Make & model</label><input type="text" placeholder="e.g. Maruti Swift"></div><div class="field"><label>Colour</label><input type="text" placeholder="e.g. White"></div></div>
+    <div class="field"><label>RC / registration copy</label><div class="upload">Drop a file here, or click to browse</div></div>
+    <button class="save-btn" onclick="document.getElementById('regform').classList.remove('open')">Save vehicle</button>
+  </div>
+</div>
+
+<!-- Generate bill -->
+<div class="overlay" id="genbill">
+  <div class="drawer">
+    <button class="close-btn" onclick="document.getElementById('genbill').classList.remove('open')">✕</button>
+    <h2>Generate bill</h2>
+    <div class="hint">Raise maintenance bills for a billing cycle.</div>
+    <div class="field"><label>Billing cycle</label><input type="month" value="2026-09"></div>
+    <div class="field"><label>Apply to</label><select><option>All flats (84)</option><option>Wing A only</option><option>Overdue flats only</option></select></div>
+    <div class="field"><label>Charge basis</label><div class="radiogrp"><label><input type="radio" name="basis" checked><span>Fixed</span></label><label><input type="radio" name="basis"><span>Per sq.ft</span></label><label><input type="radio" name="basis"><span>Slab-based</span></label></div></div>
+    <div class="row2"><div class="field"><label>Amount</label><input type="number" placeholder="10000"></div><div class="field"><label>Due date</label><input type="date" value="2026-09-10"></div></div>
+    <div class="field"><label>Late fee rule</label><input type="text" placeholder="e.g. ₹200 flat + 1.5% monthly"></div>
+    <button class="save-btn" onclick="document.getElementById('genbill').classList.remove('open')">Generate 84 bills</button>
+  </div>
+</div>
+
+<!-- Send reminders -->
+<div class="overlay" id="remind">
+  <div class="drawer">
+    <button class="close-btn" onclick="document.getElementById('remind').classList.remove('open')">✕</button>
+    <h2>Send reminders</h2>
+    <div class="hint">Notify flats with outstanding dues.</div>
+    <div class="field"><label>Send to</label><select><option>All 23 flats with dues</option><option>9 flats overdue &gt; 30 days</option></select></div>
+    <div class="field"><label>Message</label><textarea rows="4">Your maintenance dues for Aug 2026 are pending. Please pay by 10 Sep to avoid late fees.</textarea></div>
+    <button class="save-btn" onclick="document.getElementById('remind').classList.remove('open')">Send to 23 flats</button>
+  </div>
+</div>
+
+<!-- Collect payment -->
+<div class="overlay" id="collect">
+  <div class="drawer">
+    <button class="close-btn" onclick="document.getElementById('collect').classList.remove('open')">✕</button>
+    <h2>Collect payment</h2>
+    <div class="hint">Send a payment link or record a payment received offline.</div>
+    <div class="modetoggle"><div class="active" onclick="setMode(this,'link')">Send payment link</div><div onclick="setMode(this,'manual')">Record manual payment</div></div>
+    <div class="field"><label>Flat</label><input type="text" value="B-304"></div>
+    <div class="duebox"><div class="lbl">Outstanding due</div><div class="amt2">₹11,500</div></div>
+    <div id="linkMode">
+      <div class="field"><label>Send via</label><select><option>SMS + WhatsApp</option><option>Email</option></select></div>
+      <div class="field"><label>Amount</label><input type="number" value="11500"></div>
+      <div class="linkbox">pay.meridianheights.app/B-304/aug26 · expires in 48 hrs</div>
+      <button class="save-btn" onclick="document.getElementById('collect').classList.remove('open')">Send payment link</button>
+    </div>
+    <div id="manualMode" style="display:none;">
+      <div class="row2"><div class="field"><label>Amount received</label><input type="number" value="11500"></div><div class="field"><label>Date</label><input type="date" value="2026-08-21"></div></div>
+      <div class="field"><label>Mode</label><select><option>Cash</option><option>Cheque</option><option>Bank transfer</option></select></div>
+      <button class="save-btn" onclick="document.getElementById('collect').classList.remove('open'); openReceipt();">Record & generate receipt</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add expense -->
+<div class="overlay" id="overlay-exp">
+  <div class="drawer">
+    <button class="close-btn" onclick="document.getElementById('overlay-exp').classList.remove('open')">✕</button>
+    <h2>Add expense</h2>
+    <div class="hint">Fill in the bill details and attach a copy for the record.</div>
+    <div class="row2"><div class="field"><label>Date</label><input type="date" value="2026-08-21"></div><div class="field"><label>Category</label><select><option>Electricity</option><option>Housekeeping</option><option>Lift AMC</option><option>＋ Add new category</option></select></div></div>
+    <div class="field"><label>Vendor</label><input type="text" placeholder="Start typing a vendor name"></div>
+    <div class="row2"><div class="field"><label>Amount (₹)</label><input type="number" placeholder="0.00"></div><div class="field"><label>GST %</label><input type="number" value="18"></div></div>
+    <div class="row2"><div class="field"><label>Bill number</label><input type="text" placeholder="Vendor's invoice no."></div><div class="field"><label>Payment mode</label><select><option>Bank transfer</option><option>UPI</option><option>Cash</option></select></div></div>
+    <div class="field"><label>Notes</label><textarea rows="3" placeholder="Any additional details"></textarea></div>
+    <div class="field"><label>Attach bill / voucher</label><div class="upload" onclick="addThumb()">Drop a file here, or click to browse</div><div class="preview" id="preview"></div></div>
+    <button class="save-btn" onclick="document.getElementById('overlay-exp').classList.remove('open')">Save expense</button>
+  </div>
+</div>
+
+<!-- Receipt preview -->
+<div class="modal-overlay" id="receiptModal">
+  <div class="receipt">
+    <button class="rclose" onclick="document.getElementById('receiptModal').classList.remove('open')">✕</button>
+    <div class="stamp">PAID</div>
+    <div class="receipt-top"><div class="rbrand">Meridian Heights CHS</div><div class="rtitle">Payment receipt</div></div>
+    <div class="receipt-body">
+      <div class="rline"><span>Receipt no.</span><b>RC-2026-0847</b></div>
+      <div class="rline"><span>Date</span><b>21 Aug 2026</b></div>
+      <div class="rline"><span>Flat</span><b>B-304</b></div>
+      <div class="rline"><span>Towards</span><b>Maintenance · Aug 2026</b></div>
+      <div class="rline"><span>Mode</span><b>Bank transfer</b></div>
+    </div>
+    <div class="rtotal"><span class="lbl">Amount paid</span><span class="val">₹11,500</span></div>
+    <div class="rfoot">Auto-generated. No signature required.</div>
+  </div>
+</div>
+
+<script>
+  // ---- language toggle ----
+  const translations = {
+    brand: {en:'Meridian Heights', gu:'મેરિડિયન હાઇટ્સ'},
+    subbrand: {en:'Cooperative Housing Society', gu:'સહકારી હાઉસિંગ સોસાયટી'},
+    role: {en:'Treasurer · Admin', gu:'ખજાનચી · એડમિન'},
+    nav_overview: {en:'Overview', gu:'ઝાંખી'},
+    nav_dashboard: {en:'Dashboard', gu:'ડેશબોર્ડ'},
+    nav_society: {en:'Society', gu:'સોસાયટી'},
+    nav_members: {en:'Members', gu:'સભ્યો'},
+    nav_notices: {en:'Notice board', gu:'સૂચના બોર્ડ'},
+    nav_vehicles: {en:'Vehicles', gu:'વાહનો'},
+    nav_finance: {en:'Finance', gu:'નાણાં'},
+    nav_maintenance: {en:'Maintenance', gu:'મેન્ટેનન્સ'},
+    nav_payments: {en:'Payments', gu:'ચુકવણી'},
+    nav_expenses: {en:'Expenses', gu:'ખર્ચ'},
+    nav_reports: {en:'Reports & Tally', gu:'રિપોર્ટ્સ અને ટેલી'},
+    nav_setup: {en:'Setup', gu:'સેટઅપ'},
+    nav_registration: {en:'Society registration', gu:'સોસાયટી નોંધણી'},
+    title_registration: {en:'Register your society', gu:'તમારી સોસાયટીની નોંધણી કરો'},
+    reg_sub: {en:"Set up your society's basic details, structure, and opening financial position.", gu:'તમારી સોસાયટીની મૂળભૂત વિગતો, રચના અને શરૂઆતની નાણાકીય સ્થિતિ સેટ કરો.'},
+    title_dashboard: {en:'Dashboard', gu:'ડેશબોર્ડ'},
+    title_members: {en:'Members', gu:'સભ્યો'},
+    title_notices: {en:'Notice board', gu:'સૂચના બોર્ડ'},
+    title_vehicles: {en:'Vehicles', gu:'વાહનો'},
+    title_maintenance: {en:'Maintenance', gu:'મેન્ટેનન્સ'},
+    title_payments: {en:'Payments', gu:'ચુકવણી'},
+    title_expenses: {en:'Expenses', gu:'ખર્ચ'},
+    title_reports: {en:'Reports & Tally export', gu:'રિપોર્ટ્સ અને ટેલી એક્સપોર્ટ'},
+    btn_add_member: {en:'+ Add member', gu:'+ સભ્ય ઉમેરો'},
+    btn_register_vehicle: {en:'+ Register vehicle', gu:'+ વાહન નોંધણી'},
+    btn_generate_bill: {en:'+ Generate bill', gu:'+ બિલ બનાવો'},
+    btn_send_reminders: {en:'Send reminders', gu:'રિમાઇન્ડર મોકલો'},
+    btn_collect_payment: {en:'+ Collect payment', gu:'+ ચુકવણી લો'},
+    btn_add_expense: {en:'+ Add expense', gu:'+ ખર્ચ ઉમેરો'},
+    btn_post_notice: {en:'+ Post notice', gu:'+ સૂચના મૂકો'},
+    btn_download_report: {en:'Download report (PDF)', gu:'રિપોર્ટ ડાઉનલોડ કરો (PDF)'},
+    btn_export_tally: {en:'Export to Tally XML', gu:'ટેલી XML માં એક્સપોર્ટ કરો'},
+  };
+  function setLang(lang){
+    document.querySelectorAll('[data-lang-btn]').forEach(b=>b.classList.toggle('active', b.dataset.langBtn===lang));
+    document.querySelectorAll('[data-i18n]').forEach(el=>{
+      const key = el.dataset.i18n;
+      if(translations[key]) el.textContent = translations[key][lang] || translations[key].en;
+    });
+    document.documentElement.lang = lang;
+  }
+
+  // ---- sidebar navigation ----
+  document.querySelectorAll('.navitem').forEach(item=>{
+    item.addEventListener('click', ()=> goTo(item.dataset.page));
+  });
+  function goTo(page){
+    document.querySelectorAll('.navitem').forEach(n=>n.classList.toggle('active', n.dataset.page===page));
+    document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active', p.id === 'page-'+page));
+    window.scrollTo(0,0);
+  }
+
+  // ---- member drawer ----
+  function toggleRent(){
+    document.getElementById('tenantBox').classList.toggle('show', document.getElementById('rentCheck').checked);
+  }
+  function addCar(){
+    const wrap = document.createElement('div');
+    wrap.className = 'carrow';
+    wrap.innerHTML = `<button class="rm" onclick="this.closest('.carrow').remove()">✕</button>
+      <div class="row3"><div class="field"><label>Vehicle number</label><input type="text" placeholder="MH 04 AB 1234"></div><div class="field"><label>Make & model</label><input type="text" placeholder="e.g. Maruti Swift"></div><div class="field"><label>Type</label><select><option>Car</option><option>Two-wheeler</option></select></div></div>
+      <div class="row2"><div class="field"><label>Colour</label><input type="text" placeholder="e.g. White"></div><div class="field"><label>Parking slot</label><input type="text" placeholder="e.g. A-P14"></div></div>`;
+    document.querySelector('#memberform .addcar').insertAdjacentElement('beforebegin', wrap);
+  }
+
+  // ---- payment drawer ----
+  function setMode(el, mode){
+    document.querySelectorAll('.modetoggle div').forEach(d=>d.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('linkMode').style.display = mode==='link' ? 'block' : 'none';
+    document.getElementById('manualMode').style.display = mode==='manual' ? 'block' : 'none';
+  }
+  function openReceipt(){ document.getElementById('receiptModal').classList.add('open'); }
+
+  // ---- society registration page ----
+  function updateTotal(){
+    const amounts = document.querySelectorAll('.due-amt');
+    let total = 0;
+    amounts.forEach(a => total += Number(a.value) || 0);
+    document.getElementById('totalDues').textContent = '₹' + total.toLocaleString('en-IN');
+    document.getElementById('sumDues').textContent = '₹' + total.toLocaleString('en-IN');
+    updateNet();
+  }
+  function updateNet(){
+    const inputs = document.querySelectorAll('.amtinput');
+    const bank = Number(inputs[0] ? inputs[0].value : 0) || 0;
+    const cash = Number(inputs[1] ? inputs[1].value : 0) || 0;
+    const cashTotal = bank + cash;
+    document.getElementById('sumCash').textContent = '₹' + cashTotal.toLocaleString('en-IN');
+    document.getElementById('sumNet').textContent = '₹' + cashTotal.toLocaleString('en-IN');
+  }
+  function syncMemberCount(){
+    const val = document.getElementById('memberCount').value || '84';
+    document.getElementById('sumMembers').textContent = val;
+  }
+  function addDuesRow(){
+    const wrap = document.createElement('div');
+    wrap.className = 'duesrow';
+    wrap.innerHTML = `
+      <input type="text" placeholder="e.g. A-101" oninput="updateTotal()">
+      <input type="text" placeholder="Member name" oninput="updateTotal()">
+      <input class="amt-field due-amt" type="number" placeholder="0" oninput="updateTotal()">
+      <button class="rm" onclick="this.closest('.duesrow').remove(); updateTotal();">✕</button>`;
+    document.getElementById('duesLedger').appendChild(wrap);
+  }
+  function finalizeSetup(){
+    alert('Society registration saved. You can now go to the dashboard.');
+    goTo('dashboard');
+  }
+  document.addEventListener('DOMContentLoaded', ()=>{
+    document.querySelectorAll('.amtinput').forEach(el => el.addEventListener('input', updateNet));
+    updateTotal();
+  });
+
+  // ---- expense drawer ----
+  function addThumb(){
+    const p = document.getElementById('preview');
+    const d = document.createElement('div');
+    d.className='thumb'; d.innerText='bill.pdf';
+    p.appendChild(d);
+  }
+</script>
+</body>
+</html>
