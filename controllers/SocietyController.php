@@ -15,6 +15,15 @@ class SocietyController extends Controller {
         $this->societyModel = new Society();
     }
 
+    private function enforceRegistration() {
+        $userId = Session::get('user_id');
+        $society = $this->societyModel->findByUserId($userId);
+        if (!$society || empty($society['pan_number']) || empty($society['registered_address'])) {
+            Session::setFlash('info', "Please complete your society registration first.");
+            $this->redirect('/registration');
+        }
+    }
+
     public function registration() {
         $userId = Session::get('user_id');
         $society = $this->societyModel->findByUserId($userId);
@@ -88,14 +97,17 @@ class SocietyController extends Controller {
     }
 
     public function members() {
+        $this->enforceRegistration();
         $this->view('society/members');
     }
 
     public function notices() {
+        $this->enforceRegistration();
         $this->view('society/notices');
     }
 
     public function vehicles() {
+        $this->enforceRegistration();
         $this->view('society/vehicles');
     }
 }
