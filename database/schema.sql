@@ -1,6 +1,4 @@
--- Database Schema for Society Management System
-CREATE DATABASE IF NOT EXISTS `society_management_db` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE `society_management_db`;
+-- Database Schema for Society Management System (Hostinger & MySQL Compatible)
 
 -- Users table
 CREATE TABLE IF NOT EXISTS `users` (
