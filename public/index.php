@@ -28,6 +28,18 @@ try {
     // Define Dashboard Route
     $app->get('/dashboard', ['DashboardController', 'index']);
 
+    // Define Society Module Routes
+    $app->get('/registration', ['SocietyController', 'registration']);
+    $app->get('/members', ['SocietyController', 'members']);
+    $app->get('/notices', ['SocietyController', 'notices']);
+    $app->get('/vehicles', ['SocietyController', 'vehicles']);
+
+    // Define Finance Module Routes
+    $app->get('/maintenance', ['FinanceController', 'maintenance']);
+    $app->get('/payments', ['FinanceController', 'payments']);
+    $app->get('/expenses', ['FinanceController', 'expenses']);
+    $app->get('/reports', ['FinanceController', 'reports']);
+
     // Dispatch Application Router
     $app->run();
 } catch (Exception $e) {
