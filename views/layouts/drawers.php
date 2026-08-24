@@ -1,4 +1,14 @@
 <!-- ===================== DRAWERS & MODALS ===================== -->
+<style>
+  .overlay { position: fixed; inset: 0; background: rgba(35,40,31,.35); display: none; align-items: stretch; justify-content: flex-end; z-index: 50; }
+  .overlay.open { display: flex !important; }
+  .drawer { width: 440px; background: var(--paper-raised, #FFFEFA); height: 100%; padding: 28px 30px; overflow-y: auto; box-shadow: -6px 0 24px rgba(0,0,0,.12); position: relative; }
+  .drawer h2 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 22px; margin-bottom: 4px; }
+  .drawer .hint { font-size: 12.5px; color: var(--ink-soft, #5B5F52); margin-bottom: 22px; }
+  .close-btn { position: absolute; top: 26px; right: 26px; background: none; border: none; font-size: 20px; color: var(--ink-soft, #5B5F52); cursor: pointer; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(35,40,31,.4); display: none; align-items: center; justify-content: center; z-index: 60; }
+  .modal-overlay.open { display: flex !important; }
+</style>
 
 <!-- Add member -->
 <div class="overlay" id="memberform">
