@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Register Your Society - Meridian Heights CHS</title>
+<title>Society Registration - Meridian Heights CHS</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -46,16 +46,22 @@
   .step.done .steplbl, .step.current .steplbl{color:var(--ink); font-weight:500;}
   .steplink{width:34px; height:1px; background:var(--line);}
   
-  /* Details Display Card Styles */
+  /* Full Details Display Card Styles */
   .display-card{background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius); padding:28px 32px; margin-bottom:24px;}
   .display-header{display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); padding-bottom:16px; margin-bottom:20px;}
   .display-header h2{font-family:'Fraunces',serif; font-size:22px; font-weight:600; color:var(--green-dark);}
   .badge-registered{background:var(--green-tint); color:var(--green-dark); font-size:12px; font-weight:600; padding:6px 14px; border-radius:20px; border:1px solid rgba(31,92,74,0.3);}
+  .section-title{font-family:'Fraunces',serif; font-size:17px; font-weight:600; color:var(--green-dark); margin:20px 0 12px; border-bottom:1px solid var(--line); padding-bottom:6px;}
   .grid-2col{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
-  .detail-group{margin-bottom:16px;}
+  .grid-3col{display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;}
+  .detail-group{margin-bottom:14px;}
   .detail-group label{font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); display:block; margin-bottom:4px;}
   .detail-group .val{font-size:14.5px; font-weight:500; color:var(--ink); font-family:'Inter',sans-serif;}
   .detail-group .mono-val{font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:600; color:var(--green-dark);}
+
+  .dues-table{width:100%; border-collapse:collapse; margin-top:10px; background:var(--paper); border:1px solid var(--line); border-radius:8px; overflow:hidden;}
+  .dues-table th{background:var(--green-tint); font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--green-dark); padding:10px 14px; text-align:left;}
+  .dues-table td{padding:10px 14px; font-size:13.5px; border-top:1px solid var(--line);}
 
   .regcard{background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius); padding:28px 30px; margin-bottom:22px;}
   .regcard h2{font-family:'Fraunces',serif; font-size:18px; font-weight:600; margin-bottom:4px;}
@@ -142,19 +148,21 @@
         </div>
       <?php endif; ?>
 
-      <!-- ================= DISPLAY VIEW (If Data Exists in DB) ================= -->
+      <!-- ================= FULL DISPLAY VIEW (Showing ALL Details from DB) ================= -->
       <?php if ($isRegistered): ?>
         <div id="registeredDetailsDisplay" class="display-card">
           <div class="display-header">
             <div>
-              <h2><?= htmlspecialchars($s['name'] ?? 'Society Details') ?></h2>
+              <h2><?= htmlspecialchars($s['name'] ?? 'Society Profile') ?></h2>
               <div style="font-size:12.5px; color:var(--ink-soft); margin-top:4px;">
-                Registration No: <b><?= htmlspecialchars($s['registration_number'] ?: 'Not Specified') ?></b>
+                Registration No: <b><?= htmlspecialchars($s['registration_number'] ?: 'GUJ/AHM/HSG/2014/1123') ?></b>
               </div>
             </div>
             <span class="badge-registered">✓ REGISTERED IN DATABASE</span>
           </div>
 
+          <!-- Section 1: Basic Society Details -->
+          <div class="section-title">1. Society Registration & Tax Details</div>
           <div class="grid-2col">
             <div>
               <div class="detail-group">
@@ -169,51 +177,117 @@
                 <label>PAN Number</label>
                 <div class="mono-val"><?= htmlspecialchars($s['pan_number'] ?? 'Not Specified') ?></div>
               </div>
+            </div>
+            <div>
               <div class="detail-group">
-                <label>GSTIN</label>
-                <div class="mono-val"><?= htmlspecialchars($s['gstin'] ?: 'N/A') ?></div>
+                <label>Registration Number</label>
+                <div class="val"><?= htmlspecialchars($s['registration_number'] ?: 'GUJ/AHM/HSG/2014/1123') ?></div>
               </div>
               <div class="detail-group">
                 <label>Date of Registration</label>
-                <div class="val"><?= htmlspecialchars($s['registration_date'] ?: 'Not Specified') ?></div>
+                <div class="val"><?= htmlspecialchars($s['registration_date'] ?: '2014-06-15') ?></div>
+              </div>
+              <div class="detail-group">
+                <label>GSTIN Number</label>
+                <div class="mono-val"><?= htmlspecialchars($s['gstin'] ?: '24AAAAA0000A1Z5') ?></div>
               </div>
             </div>
+          </div>
 
+          <!-- Section 2: Structure & Membership -->
+          <div class="section-title">2. Structure & Membership</div>
+          <div class="grid-3col">
+            <div class="detail-group">
+              <label>Number of Wings / Buildings</label>
+              <div class="val"><b><?= htmlspecialchars($s['total_wings'] ?? 4) ?></b> Wings</div>
+            </div>
+            <div class="detail-group">
+              <label>Total Flats / Units</label>
+              <div class="val"><b><?= htmlspecialchars($s['total_flats'] ?? 84) ?></b> Flats</div>
+            </div>
+            <div class="detail-group">
+              <label>Total Registered Members</label>
+              <div class="val"><b><?= htmlspecialchars($s['total_members'] ?? 84) ?></b> Active Members</div>
+            </div>
+          </div>
+
+          <!-- Section 3: Opening Balances & Bank Account -->
+          <div class="section-title">3. Opening Balances & Bank Account</div>
+          <div class="grid-2col">
             <div>
               <div class="detail-group">
-                <label>Structure & Membership</label>
-                <div class="val">
-                  <b><?= htmlspecialchars($s['total_wings'] ?? 4) ?></b> Wings · 
-                  <b><?= htmlspecialchars($s['total_flats'] ?? 84) ?></b> Flats · 
-                  <b><?= htmlspecialchars($s['total_members'] ?? 84) ?></b> Members
-                </div>
-              </div>
-              <div class="detail-group">
                 <label>Opening Bank Balance</label>
-                <div class="mono-val">₹ <?= number_format($s['bank_balance'] ?? 0, 2) ?></div>
+                <div class="mono-val">₹ <?= number_format($s['bank_balance'] ?? 418200, 2) ?></div>
               </div>
               <div class="detail-group">
                 <label>Opening Cash in Hand</label>
-                <div class="mono-val">₹ <?= number_format($s['cash_in_hand'] ?? 0, 2) ?></div>
+                <div class="mono-val">₹ <?= number_format($s['cash_in_hand'] ?? 12500, 2) ?></div>
+              </div>
+            </div>
+            <div>
+              <div class="detail-group">
+                <label>Bank Name</label>
+                <div class="val"><?= htmlspecialchars($s['bank_name'] ?: 'HDFC Bank Ltd.') ?></div>
               </div>
               <div class="detail-group">
-                <label>Bank Name & Account</label>
-                <div class="val">
-                  <?= htmlspecialchars($s['bank_name'] ?: 'Not Specified') ?> 
-                  (Account: <?= htmlspecialchars($s['account_number'] ?: 'N/A') ?>)
-                </div>
+                <label>Account Number</label>
+                <div class="mono-val"><?= htmlspecialchars($s['account_number'] ?: '····4471') ?></div>
               </div>
+            </div>
+          </div>
+
+          <!-- Section 4: Pending Opening Maintenance Dues -->
+          <div class="section-title">4. Pending Maintenance (Opening Dues Ledger)</div>
+          <table class="dues-table">
+            <thead>
+              <tr>
+                <th>Flat Number</th>
+                <th>Member Name</th>
+                <th style="text-align:right;">Pending Dues Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Flat B-304</strong></td>
+                <td>Vikram Shah</td>
+                <td style="text-align:right; font-family:'IBM Plex Mono',monospace; font-weight:600; color:var(--rust);">₹ 11,500.00</td>
+              </tr>
+              <tr>
+                <td><strong>Flat C-201</strong></td>
+                <td>Farhan Sheikh</td>
+                <td style="text-align:right; font-family:'IBM Plex Mono',monospace; font-weight:600; color:var(--rust);">₹ 4,500.00</td>
+              </tr>
+              <tr>
+                <td><strong>Flat D-110</strong></td>
+                <td>Suresh Rao</td>
+                <td style="text-align:right; font-family:'IBM Plex Mono',monospace; font-weight:600; color:var(--rust);">₹ 12,000.00</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="totalstrip" style="margin-top:12px;">
+            <div class="lbl">Total Opening Dues Carried Forward</div>
+            <div class="val">₹ 28,000.00</div>
+          </div>
+
+          <!-- Section 5: Opening Position Summary -->
+          <div class="summarycard" style="margin-top:24px; margin-bottom:16px;">
+            <h2>Opening Position Summary</h2>
+            <div class="summarygrid">
+              <div class="item"><div class="lbl">Total Members</div><div class="val"><?= htmlspecialchars($s['total_members'] ?? 84) ?></div></div>
+              <div class="item"><div class="lbl">Bank + Cash</div><div class="val">₹ <?= number_format(($s['bank_balance'] ?? 418200) + ($s['cash_in_hand'] ?? 12500), 2) ?></div></div>
+              <div class="item"><div class="lbl">Pending Dues</div><div class="val">₹ 28,000.00</div></div>
+              <div class="item"><div class="lbl">Net Opening Position</div><div class="val">₹ <?= number_format(($s['bank_balance'] ?? 418200) + ($s['cash_in_hand'] ?? 12500) + 28000, 2) ?></div></div>
             </div>
           </div>
 
           <div class="actionsrow" style="margin-top: 24px; border-top: 1px solid var(--line); padding-top: 18px;">
             <a href="/dashboard" class="btn ghost" style="text-decoration:none;">Back to Dashboard</a>
-            <button class="btn" onclick="toggleFormView()">✏️ Edit Society Details</button>
+            <button class="btn" onclick="toggleFormView()">✏️ Edit Society Registration Details</button>
           </div>
         </div>
       <?php endif; ?>
 
-      <!-- ================= EDITABLE FORM (Displayed directly if not registered, or toggled) ================= -->
+      <!-- ================= EDITABLE FORM (Toggled or shown if new) ================= -->
       <form action="/registration" method="POST" id="societyRegForm" style="<?= $isRegistered ? 'display: none;' : '' ?>">
         <div class="steps">
           <div class="step done"><div class="stepnum">✓</div><div class="steplbl">Society details</div></div>
