@@ -52,6 +52,7 @@
   .field label{display:block; font-size:12px; font-weight:500; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); margin-bottom:6px;}
   .field input, .field select, .field textarea{width:100%; border:1px solid var(--line); background:var(--paper); border-radius:7px; padding:10px 12px; font-family:'Inter',sans-serif; font-size:13.5px; color:var(--ink);}
   .field input:focus, .field select:focus{outline:none; border-color:var(--green);}
+  .req-star{color: var(--rust); font-weight: bold;}
   .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
   .row3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px;}
   .helptext{font-size:11.5px; color:var(--ink-soft); margin-top:5px;}
@@ -85,6 +86,9 @@
   .btn:hover{background:var(--green-dark);}
   .btn.ghost{background:var(--paper-raised); color:var(--ink); border:1px solid var(--line);}
   .btn.ghost:hover{border-color:var(--ink-soft);}
+  .alert { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 18px; line-height: 1.5; }
+  .alert-danger { background: var(--rust-tint); color: var(--rust); border: 1px solid rgba(177,74,46,0.3); }
+  .alert-success { background: var(--green-tint); color: var(--green-dark); border: 1px solid rgba(31,92,74,0.3); }
 </style>
 </head>
 <body>
@@ -101,6 +105,29 @@
         <div class="sub">Set up your society's basic details, structure, and opening financial position.</div>
       </div>
 
+      <?php
+      $flashError = Session::getFlash('error');
+      $flashSuccess = Session::getFlash('success');
+      $flashErrors = Session::getFlash('errors');
+      $old = Session::getFlash('old') ?? [];
+      $s = $society ?? [];
+      ?>
+      <?php if ($flashError): ?>
+        <div class="alert alert-danger"><?= htmlspecialchars($flashError) ?></div>
+      <?php endif; ?>
+      <?php if ($flashSuccess): ?>
+        <div class="alert alert-success"><?= htmlspecialchars($flashSuccess) ?></div>
+      <?php endif; ?>
+      <?php if (!empty($flashErrors)): ?>
+        <div class="alert alert-danger">
+          <ul style="padding-left: 20px;">
+            <?php foreach ($flashErrors as $err): ?>
+              <li><?= htmlspecialchars($err) ?></li>
+            <?php endforeach; ?>
+          </ul>
+        </div>
+      <?php endif; ?>
+
       <div class="steps">
         <div class="step done"><div class="stepnum">✓</div><div class="steplbl">Society details</div></div>
         <div class="steplink"></div>
@@ -109,112 +136,151 @@
         <div class="step"><div class="stepnum">3</div><div class="steplbl">Confirm</div></div>
       </div>
 
-      <!-- Society details -->
-      <div class="regcard">
-        <h2>Society details</h2>
-        <div class="desc">Basic registration information for your housing society.</div>
-        <div class="field"><label>Society name</label><input type="text" value="Meridian Heights Cooperative Housing Society"></div>
-        <div class="row2">
-          <div class="field"><label>Registration number</label><input type="text" placeholder="e.g. GUJ/AHM/HSG/2014/1123"></div>
-          <div class="field"><label>Date of registration</label><input type="date"></div>
-        </div>
-        <div class="field"><label>Registered address</label><input type="text" placeholder="Building name, street, city, state, PIN"></div>
-        <div class="row2">
-          <div class="field"><label>PAN</label><input type="text" placeholder="AAAAA0000A"></div>
-          <div class="field"><label>GSTIN (if applicable)</label><input type="text" placeholder="24AAAAA0000A1Z5"></div>
-        </div>
-      </div>
-
-      <!-- Structure & members -->
-      <div class="regcard">
-        <h2>Structure & membership</h2>
-        <div class="desc">How your society is organised, and how many members it has.</div>
-        <div class="row3">
-          <div class="field"><label>Number of wings / buildings</label><input type="number" value="4"></div>
-          <div class="field"><label>Total flats / units</label><input type="number" value="84"></div>
-          <div class="field"><label>Total number of members</label><input type="number" id="memberCount" value="84" oninput="syncMemberCount()"></div>
-        </div>
-        <div class="helptext" style="margin-top:-6px;">This should match your total flats unless some units are vacant or unsold. You can add individual member records later from the Members page.</div>
-      </div>
-
-      <!-- Opening balances -->
-      <div class="regcard">
-        <h2>Opening balances</h2>
-        <div class="desc">Enter your society's cash and bank position as on the date you're starting this system.</div>
-        <div class="field"><label>Balances as on</label><input type="date" value="2026-08-21" style="max-width:220px;"></div>
-
-        <div class="balancegrid">
-          <div class="balancecard">
-            <div class="lbl">🏦 Bank balance</div>
-            <input class="amtinput" type="number" placeholder="0.00" value="418200" id="bankInput" oninput="recalcSummary()">
-            <div class="sub">Enter bank name & account below</div>
+      <form action="/registration" method="POST" id="societyRegForm">
+        <!-- Card 1: Society details (FUNCTIONAL FORM WITH REQUIRED ADDRESS & PAN) -->
+        <div class="regcard">
+          <h2>Society details</h2>
+          <div class="desc">Basic registration information for your housing society.</div>
+          
+          <div class="field">
+            <label for="society_name">Society name <span class="req-star">*</span></label>
+            <input type="text" id="society_name" name="society_name" value="<?= htmlspecialchars($old['society_name'] ?? ($s['name'] ?? Session::get('society_name') ?? 'Meridian Heights Cooperative Housing Society')) ?>" required>
           </div>
-          <div class="balancecard">
-            <div class="lbl">💵 Cash in hand</div>
-            <input class="amtinput" type="number" placeholder="0.00" value="12500" id="cashInput" oninput="recalcSummary()">
-            <div class="sub">Petty cash held by treasurer</div>
+
+          <div class="row2">
+            <div class="field">
+              <label for="registration_number">Registration number</label>
+              <input type="text" id="registration_number" name="registration_number" placeholder="e.g. GUJ/AHM/HSG/2014/1123" value="<?= htmlspecialchars($old['registration_number'] ?? ($s['registration_number'] ?? '')) ?>">
+            </div>
+            <div class="field">
+              <label for="registration_date">Date of registration</label>
+              <input type="date" id="registration_date" name="registration_date" value="<?= htmlspecialchars($old['registration_date'] ?? ($s['registration_date'] ?? '')) ?>">
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="registered_address">Registered address <span class="req-star">* (Required)</span></label>
+            <input type="text" id="registered_address" name="registered_address" placeholder="Building name, street, city, state, PIN" value="<?= htmlspecialchars($old['registered_address'] ?? ($s['registered_address'] ?? '')) ?>" required>
+          </div>
+
+          <div class="row2">
+            <div class="field">
+              <label for="pan_number">PAN Number <span class="req-star">* (Required)</span></label>
+              <input type="text" id="pan_number" name="pan_number" placeholder="e.g. AAAAA0000A" maxlength="10" style="text-transform: uppercase;" value="<?= htmlspecialchars($old['pan_number'] ?? ($s['pan_number'] ?? '')) ?>" required pattern="[A-Za-z]{5}[0-9]{4}[A-Za-z]{1}">
+            </div>
+            <div class="field">
+              <label for="gstin">GSTIN (if applicable)</label>
+              <input type="text" id="gstin" name="gstin" placeholder="24AAAAA0000A1Z5" style="text-transform: uppercase;" value="<?= htmlspecialchars($old['gstin'] ?? ($s['gstin'] ?? '')) ?>">
+            </div>
           </div>
         </div>
 
-        <div class="row2" style="margin-top:16px;">
-          <div class="field"><label>Bank name</label><input type="text" placeholder="e.g. HDFC Bank"></div>
-          <div class="field"><label>Account number</label><input type="text" placeholder="····4471"></div>
-        </div>
-      </div>
-
-      <!-- Pending maintenance per member -->
-      <div class="regcard">
-        <h2>Pending maintenance (opening dues)</h2>
-        <div class="desc">If any members have outstanding maintenance dues from before you started using this system, record them here so their balance carries forward correctly.</div>
-
-        <span class="bulklink" onclick="alert('This would open a CSV upload — flat, member name, pending amount.')">Or upload a CSV instead</span>
-
-        <div class="duesledger" id="duesLedger">
-          <div class="duesrow head"><div>Flat</div><div>Member name</div><div style="text-align:right">Pending amount</div><div></div></div>
-
-          <div class="duesrow">
-            <input type="text" value="B-304" oninput="updateTotal()">
-            <input type="text" value="Vikram Shah" oninput="updateTotal()">
-            <input class="amt-field due-amt" type="number" value="11500" oninput="updateTotal()">
-            <button class="rm" onclick="this.closest('.duesrow').remove(); updateTotal();">✕</button>
+        <!-- Card 2: Structure & members -->
+        <div class="regcard">
+          <h2>Structure & membership</h2>
+          <div class="desc">How your society is organised, and how many members it has.</div>
+          <div class="row3">
+            <div class="field">
+              <label for="total_wings">Number of wings / buildings</label>
+              <input type="number" id="total_wings" name="total_wings" value="<?= htmlspecialchars($old['total_wings'] ?? ($s['total_wings'] ?? 4)) ?>">
+            </div>
+            <div class="field">
+              <label for="total_flats">Total flats / units</label>
+              <input type="number" id="total_flats" name="total_flats" value="<?= htmlspecialchars($old['total_flats'] ?? ($s['total_flats'] ?? 84)) ?>">
+            </div>
+            <div class="field">
+              <label for="memberCount">Total number of members</label>
+              <input type="number" id="memberCount" name="total_members" value="<?= htmlspecialchars($old['total_members'] ?? ($s['total_members'] ?? 84)) ?>" oninput="syncMemberCount()">
+            </div>
           </div>
-          <div class="duesrow">
-            <input type="text" value="C-201" oninput="updateTotal()">
-            <input type="text" value="Farhan Sheikh" oninput="updateTotal()">
-            <input class="amt-field due-amt" type="number" value="4500" oninput="updateTotal()">
-            <button class="rm" onclick="this.closest('.duesrow').remove(); updateTotal();">✕</button>
+          <div class="helptext" style="margin-top:-6px;">This should match your total flats unless some units are vacant or unsold. You can add individual member records later from the Members page.</div>
+        </div>
+
+        <!-- Card 3: Opening balances -->
+        <div class="regcard">
+          <h2>Opening balances</h2>
+          <div class="desc">Enter your society's cash and bank position as on the date you're starting this system.</div>
+          <div class="field"><label>Balances as on</label><input type="date" value="2026-08-21" style="max-width:220px;"></div>
+
+          <div class="balancegrid">
+            <div class="balancecard">
+              <div class="lbl">🏦 Bank balance</div>
+              <input class="amtinput" type="number" placeholder="0.00" name="bank_balance" value="<?= htmlspecialchars($old['bank_balance'] ?? ($s['bank_balance'] ?? 418200)) ?>" id="bankInput" oninput="recalcSummary()">
+              <div class="sub">Enter bank name & account below</div>
+            </div>
+            <div class="balancecard">
+              <div class="lbl">💵 Cash in hand</div>
+              <input class="amtinput" type="number" placeholder="0.00" name="cash_in_hand" value="<?= htmlspecialchars($old['cash_in_hand'] ?? ($s['cash_in_hand'] ?? 12500)) ?>" id="cashInput" oninput="recalcSummary()">
+              <div class="sub">Petty cash held by treasurer</div>
+            </div>
           </div>
-          <div class="duesrow">
-            <input type="text" value="D-110" oninput="updateTotal()">
-            <input type="text" value="Suresh Rao" oninput="updateTotal()">
-            <input class="amt-field due-amt" type="number" value="12000" oninput="updateTotal()">
-            <button class="rm" onclick="this.closest('.duesrow').remove(); updateTotal();">✕</button>
+
+          <div class="row2" style="margin-top:16px;">
+            <div class="field">
+              <label for="bank_name">Bank name</label>
+              <input type="text" id="bank_name" name="bank_name" placeholder="e.g. HDFC Bank" value="<?= htmlspecialchars($old['bank_name'] ?? ($s['bank_name'] ?? 'HDFC Bank')) ?>">
+            </div>
+            <div class="field">
+              <label for="account_number">Account number</label>
+              <input type="text" id="account_number" name="account_number" placeholder="····4471" value="<?= htmlspecialchars($old['account_number'] ?? ($s['account_number'] ?? '')) ?>">
+            </div>
           </div>
         </div>
 
-        <button class="addrow" onclick="addDuesRow()">+ Add another flat with pending dues</button>
+        <!-- Card 4: Pending maintenance per member -->
+        <div class="regcard">
+          <h2>Pending maintenance (opening dues)</h2>
+          <div class="desc">If any members have outstanding maintenance dues from before you started using this system, record them here so their balance carries forward correctly.</div>
 
-        <div class="totalstrip">
-          <div class="lbl">Total opening dues</div>
-          <div class="val" id="totalDues">₹28,000</div>
+          <span class="bulklink" onclick="alert('This would open a CSV upload — flat, member name, pending amount.')">Or upload a CSV instead</span>
+
+          <div class="duesledger" id="duesLedger">
+            <div class="duesrow head"><div>Flat</div><div>Member name</div><div style="text-align:right">Pending amount</div><div></div></div>
+
+            <div class="duesrow">
+              <input type="text" value="B-304" oninput="updateTotal()">
+              <input type="text" value="Vikram Shah" oninput="updateTotal()">
+              <input class="amt-field due-amt" type="number" value="11500" oninput="updateTotal()">
+              <button class="rm" type="button" onclick="this.closest('.duesrow').remove(); updateTotal();">✕</button>
+            </div>
+            <div class="duesrow">
+              <input type="text" value="C-201" oninput="updateTotal()">
+              <input type="text" value="Farhan Sheikh" oninput="updateTotal()">
+              <input class="amt-field due-amt" type="number" value="4500" oninput="updateTotal()">
+              <button class="rm" type="button" onclick="this.closest('.duesrow').remove(); updateTotal();">✕</button>
+            </div>
+            <div class="duesrow">
+              <input type="text" value="D-110" oninput="updateTotal()">
+              <input type="text" value="Suresh Rao" oninput="updateTotal()">
+              <input class="amt-field due-amt" type="number" value="12000" oninput="updateTotal()">
+              <button class="rm" type="button" onclick="this.closest('.duesrow').remove(); updateTotal();">✕</button>
+            </div>
+          </div>
+
+          <button class="addrow" type="button" onclick="addDuesRow()">+ Add another flat with pending dues</button>
+
+          <div class="totalstrip">
+            <div class="lbl">Total opening dues</div>
+            <div class="val" id="totalDues">₹28,000</div>
+          </div>
         </div>
-      </div>
 
-      <!-- Summary -->
-      <div class="summarycard">
-        <h2>Opening position summary</h2>
-        <div class="summarygrid">
-          <div class="item"><div class="lbl">Total members</div><div class="val" id="sumMembers">84</div></div>
-          <div class="item"><div class="lbl">Bank + cash</div><div class="val" id="sumCash">₹4,30,700</div></div>
-          <div class="item"><div class="lbl">Pending dues</div><div class="val" id="sumDues">₹28,000</div></div>
-          <div class="item"><div class="lbl">Net opening position</div><div class="val" id="sumNet">₹4,58,700</div></div>
+        <!-- Summary Card -->
+        <div class="summarycard">
+          <h2>Opening position summary</h2>
+          <div class="summarygrid">
+            <div class="item"><div class="lbl">Total members</div><div class="val" id="sumMembers"><?= htmlspecialchars($s['total_members'] ?? 84) ?></div></div>
+            <div class="item"><div class="lbl">Bank + cash</div><div class="val" id="sumCash">₹4,30,700</div></div>
+            <div class="item"><div class="lbl">Pending dues</div><div class="val" id="sumDues">₹28,000</div></div>
+            <div class="item"><div class="lbl">Net opening position</div><div class="val" id="sumNet">₹4,58,700</div></div>
+          </div>
         </div>
-      </div>
 
-      <div class="actionsrow">
-        <a href="/dashboard" class="btn ghost" style="text-decoration:none;">Back to Dashboard</a>
-        <button class="btn" onclick="finalizeSetup()">Save & continue</button>
-      </div>
+        <div class="actionsrow">
+          <a href="/dashboard" class="btn ghost" style="text-decoration:none;">Back to Dashboard</a>
+          <button type="submit" class="btn">Save & Continue to Database</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
@@ -235,7 +301,7 @@ function addDuesRow() {
       <input type="text" placeholder="Flat no." oninput="updateTotal()">
       <input type="text" placeholder="Member name" oninput="updateTotal()">
       <input class="amt-field due-amt" type="number" placeholder="0" oninput="updateTotal()">
-      <button class="rm" onclick="this.closest('.duesrow').remove(); updateTotal();">✕</button>
+      <button class="rm" type="button" onclick="this.closest('.duesrow').remove(); updateTotal();">✕</button>
     `;
     ledger.appendChild(div);
 }
@@ -263,11 +329,6 @@ function recalcSummary() {
 
     document.getElementById('sumCash').textContent = '₹' + cashTotal.toLocaleString('en-IN');
     document.getElementById('sumNet').textContent = '₹' + (cashTotal + duesTotal).toLocaleString('en-IN');
-}
-
-function finalizeSetup() {
-    alert('Society registration and opening balance setup saved successfully!');
-    window.location.href = '/dashboard';
 }
 </script>
 

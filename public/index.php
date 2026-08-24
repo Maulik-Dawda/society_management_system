@@ -28,8 +28,9 @@ try {
     // Define Dashboard Route
     $app->get('/dashboard', ['DashboardController', 'index']);
 
-    // Define Society Module Routes (with route aliases for seamless navigation)
+    // Define Society Module Routes
     $app->get('/registration', ['SocietyController', 'registration']);
+    $app->post('/registration', ['SocietyController', 'processRegistration']);
     $app->get('/society-registration', ['SocietyController', 'registration']);
     $app->get('/society/registration', ['SocietyController', 'registration']);
 
