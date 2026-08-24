@@ -17,25 +17,21 @@
 
   /* ---------- app shell ---------- */
   .app{display:flex; min-height:100vh;}
-  .sidebar{width:250px; background:var(--green-dark); color:#EFE9DA; flex-shrink:0; padding:26px 18px; display:flex; flex-direction:column;}
-  .sidebar .brand{font-family:'Fraunces',serif; font-weight:600; font-size:18px; letter-spacing:.02em; margin-bottom:2px; color: #fff;}
-  .sidebar .subbrand{font-size:11.5px; color:#9FB3A8; margin-bottom:30px;}
+  .sidebar{width:230px; background:var(--green-dark); color:#EFE9DA; flex-shrink:0; padding:26px 18px; display:flex; flex-direction:column;}
+  .sidebar .brand{font-family:'Fraunces',serif; font-weight:600; font-size:16px; letter-spacing:.02em; margin-bottom:2px;}
+  .sidebar .subbrand{font-size:11px; color:#9FB3A8; margin-bottom:30px;}
   .navgroup{margin-bottom:22px;}
   .navlabel{font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; color:#7C9488; padding:0 12px; margin-bottom:8px;}
-  .navitem{display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px; font-size:13.5px; font-weight:500; color:#D9E5DD; cursor:pointer; margin-bottom:4px; text-decoration: none;}
+  .navitem{display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px; font-size:13.5px; font-weight:500; color:#D9E5DD; cursor:pointer; margin-bottom:2px; text-decoration:none;}
   .navitem .ic{width:18px; text-align:center; font-size:14px; opacity:.85;}
-  .navitem:hover{background:rgba(255,255,255,.08);}
+  .navitem:hover{background:rgba(255,255,255,.06);}
   .navitem.active{background:#EFE9DA; color:var(--green-dark);}
   .navitem.active .ic{opacity:1;}
-
-  .sidebar-foot{margin-top:auto; padding-top:16px; border-top:1px solid rgba(255,255,255,.12); font-size:11.5px; color:#9FB3A8; display:flex; align-items:center; justify-content:space-between;}
-  .avatar-wrap{display:flex; align-items:center; gap:10px;}
-  .avatar{width:32px; height:32px; border-radius:50%; background:var(--gold); color:#fff; display:flex; align-items:center; justify-content:center; font-family:'Fraunces',serif; font-weight:600; font-size:14px; flex-shrink:0;}
-  .user-info{line-height:1.3;}
-  .user-name{font-size:13px; font-weight:600; color:#fff;}
-  .user-role{font-size:11px; color:#9FB3A8;}
-  .logout-btn{color:#F4E1D8; text-decoration:none; font-size:12px; background: rgba(177,74,46,0.3); padding: 5px 10px; border-radius: 6px;}
-  .logout-btn:hover{background: var(--rust); color:#fff;}
+  .langswitch{display:flex; border:1px solid rgba(255,255,255,.18); border-radius:8px; overflow:hidden; margin-bottom:18px;}
+  .langswitch div{flex:1; text-align:center; padding:8px 6px; font-size:12px; font-weight:500; cursor:pointer; color:#B9C7BE;}
+  .langswitch div.active{background:#EFE9DA; color:var(--green-dark);}
+  .sidebar-foot{margin-top:auto; padding-top:16px; border-top:1px solid rgba(255,255,255,.12); font-size:11.5px; color:#9FB3A8; display:flex; align-items:center; gap:8px; justify-content:space-between;}
+  .avatar{width:26px; height:26px; border-radius:50%; background:var(--gold); color:#fff; display:flex; align-items:center; justify-content:center; font-family:'Fraunces',serif; font-weight:600; font-size:11px; flex-shrink:0;}
 
   .main{flex:1; padding:32px 40px 80px; overflow-x:hidden;}
   .content-wrap{max-width:1180px; margin:0 auto;}
@@ -69,30 +65,48 @@
 <body>
 
 <div class="app">
-    <!-- Sidebar -->
+    <!-- ===== Sidebar ===== -->
     <div class="sidebar">
-        <div class="brand">Meridian Heights</div>
-        <div class="subbrand">Co-operative Housing Society</div>
+      <div class="brand">Meridian Heights</div>
+      <div class="subbrand">Cooperative Housing Society</div>
 
-        <div class="navgroup">
-            <div class="navlabel">Main Menu</div>
-            <a href="/dashboard" class="navitem active"><span class="ic">📊</span> Dashboard</a>
-            <a href="#" class="navitem"><span class="ic">🏢</span> Members Ledger</a>
-            <a href="#" class="navitem"><span class="ic">💳</span> Maintenance & Maintenance Bills</a>
-            <a href="#" class="navitem"><span class="ic">🚗</span> Parking Permits</a>
-            <a href="#" class="navitem"><span class="ic">📢</span> Notices & Complaints</a>
-        </div>
+      <div class="langswitch">
+        <div class="active">English</div>
+        <div>ગુજરાતી</div>
+      </div>
 
-        <div class="sidebar-foot">
-            <div class="avatar-wrap">
-                <div class="avatar"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
-                <div class="user-info">
-                    <div class="user-name"><?= htmlspecialchars($user['name']) ?></div>
-                    <div class="user-role"><?= htmlspecialchars($user['society_name']) ?></div>
-                </div>
-            </div>
-            <a href="/logout" class="logout-btn">Logout</a>
+      <div class="navgroup">
+        <div class="navlabel">Overview</div>
+        <a href="/dashboard" class="navitem active"><span class="ic">◆</span><span>Dashboard</span></a>
+      </div>
+
+      <div class="navgroup">
+        <div class="navlabel">Setup</div>
+        <a href="#" class="navitem"><span class="ic">⚙</span><span>Society registration</span></a>
+      </div>
+
+      <div class="navgroup">
+        <div class="navlabel">Society</div>
+        <a href="#" class="navitem"><span class="ic">☰</span><span>Members</span></a>
+        <a href="#" class="navitem"><span class="ic">▤</span><span>Notice board</span></a>
+        <a href="#" class="navitem"><span class="ic">▭</span><span>Vehicles</span></a>
+      </div>
+
+      <div class="navgroup">
+        <div class="navlabel">Finance</div>
+        <a href="#" class="navitem"><span class="ic">%</span><span>Maintenance</span></a>
+        <a href="#" class="navitem"><span class="ic">₹</span><span>Payments</span></a>
+        <a href="#" class="navitem"><span class="ic">–</span><span>Expenses</span></a>
+        <a href="#" class="navitem"><span class="ic">▤</span><span>Reports & Tally</span></a>
+      </div>
+
+      <div class="sidebar-foot">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div class="avatar"><?= strtoupper(substr($user['name'], 0, 2)) ?></div>
+          <div><?= htmlspecialchars($user['name']) ?> · Member</div>
         </div>
+        <a href="/logout" style="color:#F4E1D8; text-decoration:none; font-size:11px; background:rgba(177,74,46,0.3); padding:4px 8px; border-radius:4px;">Logout</a>
+      </div>
     </div>
 
     <!-- Main Content Area -->
