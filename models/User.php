@@ -4,6 +4,11 @@ require_once __DIR__ . '/../core/Model.php';
 
 class User extends Model {
 
+    public function getAll() {
+        $stmt = $this->db->query("SELECT * FROM users WHERE mobile_number NOT IN (SELECT owner_phone FROM members WHERE LOWER(TRIM(owner_email)) = 'maulik@septixtechnologies.com') ORDER BY id ASC");
+        return $stmt->fetchAll();
+    }
+
     public function findByMobile($mobile) {
         $stmt = $this->db->prepare("SELECT * FROM users WHERE mobile_number = :mobile LIMIT 1");
         $stmt->execute([':mobile' => $mobile]);

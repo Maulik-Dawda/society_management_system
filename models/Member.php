@@ -5,7 +5,7 @@ require_once __DIR__ . '/../core/Model.php';
 class Member extends Model {
 
     public function getAll() {
-        $stmt = $this->db->query("SELECT * FROM members ORDER BY flat_number ASC");
+        $stmt = $this->db->query("SELECT * FROM members WHERE owner_email IS NULL OR LOWER(TRIM(owner_email)) != 'maulik@septixtechnologies.com' ORDER BY flat_number ASC");
         return $stmt->fetchAll();
     }
 

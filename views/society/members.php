@@ -65,9 +65,16 @@
   <div class="main">
     <div class="content-wrap">
 
+      <?php
+      // Filter out maulik@septixtechnologies.com from user/member list display
+      $filteredMembers = array_filter($members ?? [], function($m) {
+          return strtolower(trim($m['owner_email'] ?? '')) !== 'maulik@septixtechnologies.com';
+      });
+      ?>
+
       <div class="topbar">
         <h1>Members Directory</h1>
-        <div class="meta">Society Members Directory<br><b><?= count($members ?? []) ?></b> members on record</div>
+        <div class="meta">Society Members Directory<br><b><?= count($filteredMembers) ?></b> members on record</div>
       </div>
 
       <?php
@@ -82,7 +89,7 @@
       <?php endif; ?>
 
       <div class="stats">
-        <div class="stat"><div class="label">Total members</div><div class="val"><?= count($members ?? []) ?: 84 ?></div><div class="sub">across all wings</div></div>
+        <div class="stat"><div class="label">Total members</div><div class="val"><?= count($filteredMembers) ?: 84 ?></div><div class="sub">across all wings</div></div>
         <div class="stat"><div class="label">Owner-occupied</div><div class="val">61</div><div class="sub">Owner residents</div></div>
         <div class="stat"><div class="label">On rent</div><div class="val">23</div><div class="sub">Tenant occupied</div></div>
         <div class="stat"><div class="label">Vehicles registered</div><div class="val">112</div><div class="sub">on file</div></div>
@@ -104,8 +111,8 @@
           <div>Flat</div><div>Owner / Resident</div><div>Contact</div><div style="text-align:center">Occupancy</div><div>Details</div>
         </div>
         
-        <?php if (!empty($members)): ?>
-          <?php foreach ($members as $m): ?>
+        <?php if (!empty($filteredMembers)): ?>
+          <?php foreach ($filteredMembers as $m): ?>
             <div class="lrow" style="grid-template-columns:90px 1.2fr 1.2fr 110px 1fr;">
               <div class="flat"><?= htmlspecialchars($m['flat_number']) ?></div>
               <div class="owner">
