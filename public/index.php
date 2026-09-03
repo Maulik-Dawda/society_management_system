@@ -28,32 +28,39 @@ try {
     // Define Dashboard Route
     $app->get('/dashboard', ['DashboardController', 'index']);
 
-    // Define Society Module Routes
+    // Define Society Module Routes & Actions
     $app->get('/registration', ['SocietyController', 'registration']);
     $app->post('/registration', ['SocietyController', 'processRegistration']);
     $app->get('/society-registration', ['SocietyController', 'registration']);
     $app->get('/society/registration', ['SocietyController', 'registration']);
 
     $app->get('/members', ['SocietyController', 'members']);
+    $app->post('/members/add', ['SocietyController', 'addMember']);
     $app->get('/society/members', ['SocietyController', 'members']);
 
     $app->get('/notices', ['SocietyController', 'notices']);
+    $app->post('/notices/add', ['SocietyController', 'addNotice']);
     $app->get('/society/notices', ['SocietyController', 'notices']);
 
     $app->get('/vehicles', ['SocietyController', 'vehicles']);
+    $app->post('/vehicles/add', ['SocietyController', 'addVehicle']);
     $app->get('/society/vehicles', ['SocietyController', 'vehicles']);
 
-    // Define Finance Module Routes
+    // Define Finance Module Routes & Actions
     $app->get('/maintenance', ['FinanceController', 'maintenance']);
+    $app->post('/maintenance/generate', ['FinanceController', 'generateBills']);
     $app->get('/finance/maintenance', ['FinanceController', 'maintenance']);
 
     $app->get('/payments', ['FinanceController', 'payments']);
+    $app->post('/payments/collect', ['FinanceController', 'collectPayment']);
     $app->get('/finance/payments', ['FinanceController', 'payments']);
 
     $app->get('/expenses', ['FinanceController', 'expenses']);
+    $app->post('/expenses/add', ['FinanceController', 'addExpense']);
     $app->get('/finance/expenses', ['FinanceController', 'expenses']);
 
     $app->get('/reports', ['FinanceController', 'reports']);
+    $app->get('/reports/tally-export', ['FinanceController', 'tallyExport']);
     $app->get('/finance/reports', ['FinanceController', 'reports']);
 
     // Dispatch Application Router

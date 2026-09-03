@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Expenses - Meridian Heights CHS</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root{ --paper:#F3F1E9; --paper-raised:#FFFEFA; --ink:#23281F; --ink-soft:#5B5F52; --line:#DAD5C4; --green:#1F5C4A; --green-dark:#123D31; --green-tint:#E4EDE7; --gold:#B9812A; --gold-tint:#F5E9D2; --rust:#B14A2E; --radius:10px; }
+  :root{ --paper:#F3F1E9; --paper-raised:#FFFEFA; --ink:#23281F; --ink-soft:#5B5F52; --line:#DAD5C4; --green:#1F5C4A; --green-dark:#123D31; --green-tint:#E4EDE7; --gold:#B9812A; --gold-tint:#F5E9D2; --rust:#B14A2E; --rust-tint:#F4E1D8; --radius:10px; }
   *{box-sizing:border-box; margin:0; padding:0;}
   body{background:var(--paper); color:var(--ink); font-family:'Inter',sans-serif;}
   .app{display:flex; min-height:100vh;}
@@ -47,11 +48,12 @@
   .cat .sub{display:block; font-size:11.5px; color:var(--ink-soft); font-weight:400;}
   .vendor{font-size:12.5px; color:var(--ink-soft);}
   .bill{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink-soft);}
-  .amt{font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:500; text-align:right;}
-  .status{font-size:11px; padding:4px 10px; border-radius:20px; font-weight:500;}
+  .amt{font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:600; color:var(--rust); text-align:right;}
+  .status{font-size:11px; padding:4px 10px; border-radius:20px; font-weight:500; text-align:center;}
   .status.paid{background:var(--green-tint); color:var(--green-dark);}
-  .status.pending{background:var(--gold-tint); color:var(--gold);}
-  .clip{width:34px; height:34px; border-radius:6px; border:1px solid var(--line); display:flex; align-items:center; justify-content:center; cursor:pointer; background:#fff; font-size:14px; color:var(--ink-soft);}
+  .alert { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 18px; line-height: 1.5; }
+  .alert-danger { background: var(--rust-tint); color: var(--rust); border: 1px solid rgba(177,74,46,0.3); }
+  .alert-success { background: var(--green-tint); color: var(--green-dark); border: 1px solid rgba(31,92,74,0.3); }
 </style>
 </head>
 <body>
@@ -63,41 +65,75 @@
     <div class="content-wrap">
 
       <div class="topbar">
-        <h1>Expenses</h1>
-        <div class="meta">Financial year <b>2026–27</b><br>12 categories · 27 vendors</div>
+        <h1>Expense Ledger</h1>
+        <div class="meta">Society Expenditures<br><b><?= count($expenses ?? []) ?></b> entries recorded</div>
       </div>
 
+      <?php
+      $flashSuccess = Session::getFlash('success');
+      $flashError = Session::getFlash('error');
+      ?>
+      <?php if ($flashSuccess): ?>
+        <div class="alert alert-success"><?= htmlspecialchars($flashSuccess) ?></div>
+      <?php endif; ?>
+      <?php if ($flashError): ?>
+        <div class="alert alert-danger"><?= htmlspecialchars($flashError) ?></div>
+      <?php endif; ?>
+
       <div class="stats">
-        <div class="stat"><div class="label">This month</div><div class="val">₹1,84,200</div><div class="sub">18 entries</div></div>
-        <div class="stat warn"><div class="label">Pending approval</div><div class="val">₹32,500</div><div class="sub">4 bills waiting</div></div>
-        <div class="stat"><div class="label">Paid</div><div class="val">₹1,51,700</div><div class="sub">14 bills</div></div>
-        <div class="stat"><div class="label">Vendors on file</div><div class="val">27</div><div class="sub">3 added this month</div></div>
+        <div class="stat"><div class="label">Total Expenses</div><div class="val">₹ 1,84,200</div><div class="sub">this month</div></div>
+        <div class="stat warn"><div class="label">Pending Approval</div><div class="val">₹ 32,500</div><div class="sub">4 bills waiting</div></div>
+        <div class="stat"><div class="label">Approved & Paid</div><div class="val">₹ 1,51,700</div><div class="sub">14 bills cleared</div></div>
+        <div class="stat"><div class="label">Vendors On File</div><div class="val">27</div><div class="sub">active vendors</div></div>
       </div>
 
       <div class="controls">
         <div class="chips">
-          <div class="chip active">All categories</div><div class="chip">Electricity</div><div class="chip">Housekeeping</div><div class="chip">Lift AMC</div><div class="chip">Repairs</div>
+          <div class="chip active">All categories</div>
+          <div class="chip">Electricity</div>
+          <div class="chip">Housekeeping</div>
+          <div class="chip">Lift AMC</div>
+          <div class="chip">Repairs</div>
         </div>
-        <button class="btn" onclick="document.getElementById('overlay-exp').classList.add('open')">+ Add expense</button>
+        <button class="btn" onclick="document.getElementById('overlay-exp').classList.add('open')">＋ Add Expense</button>
       </div>
 
       <div class="ledger">
-        <div class="lrow head" style="grid-template-columns:90px 1.1fr 1fr 100px 110px 110px 120px 60px;"><div>Date</div><div>Category</div><div>Vendor</div><div>Bill no.</div><div style="text-align:right">Amount</div><div style="text-align:center">Status</div><div>Mode</div><div></div></div>
+        <div class="lrow head" style="grid-template-columns:90px 1.2fr 1.2fr 100px 110px 90px;">
+          <div>Date</div><div>Category</div><div>Vendor</div><div>Bill No.</div><div style="text-align:right">Amount</div><div style="text-align:center">Status</div>
+        </div>
         
-        <div class="lrow" style="grid-template-columns:90px 1.1fr 1fr 100px 110px 110px 120px 60px;">
-          <div class="date">14 Aug</div><div class="cat">Electricity<span class="sub">Common area · DHBVN</span></div><div class="vendor">DHBVN Ltd.</div><div class="bill">EL-0921</div>
-          <div class="amt">₹18,420</div><div style="display:flex; justify-content:center"><span class="status paid">Paid</span></div><div class="vendor">Bank</div><div class="clip">📎</div>
-        </div>
-
-        <div class="lrow" style="grid-template-columns:90px 1.1fr 1fr 100px 110px 110px 120px 60px;">
-          <div class="date">12 Aug</div><div class="cat">Housekeeping<span class="sub">Monthly contract</span></div><div class="vendor">CleanPro Services</div><div class="bill">HK-0442</div>
-          <div class="amt">₹42,000</div><div style="display:flex; justify-content:center"><span class="status pending">Pending</span></div><div class="vendor">—</div><div class="clip">📎</div>
-        </div>
-
-        <div class="lrow" style="grid-template-columns:90px 1.1fr 1fr 100px 110px 110px 120px 60px;">
-          <div class="date">10 Aug</div><div class="cat">Lift AMC<span class="sub">Quarterly service</span></div><div class="vendor">OTIS Elevators</div><div class="bill">AMC-118</div>
-          <div class="amt">₹27,850</div><div style="display:flex; justify-content:center"><span class="status paid">Paid</span></div><div class="vendor">UPI</div><div class="clip">📎</div>
-        </div>
+        <?php if (!empty($expenses)): ?>
+          <?php foreach ($expenses as $e): ?>
+            <div class="lrow" style="grid-template-columns:90px 1.2fr 1.2fr 100px 110px 90px;">
+              <div class="date"><?= date('d M', strtotime($e['expense_date'])) ?></div>
+              <div class="cat"><?= htmlspecialchars($e['category']) ?><span class="sub"><?= htmlspecialchars($e['notes'] ?: 'Society Maintenance') ?></span></div>
+              <div class="vendor"><?= htmlspecialchars($e['vendor_name']) ?></div>
+              <div class="bill"><?= htmlspecialchars($e['bill_number'] ?: 'INV-001') ?></div>
+              <div class="amt">- ₹ <?= number_format($e['amount'], 2) ?></div>
+              <div style="display:flex; justify-content:center">
+                <span class="status paid"><?= htmlspecialchars($e['status']) ?></span>
+              </div>
+            </div>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <!-- Demo expenses if DB is fresh -->
+          <div class="lrow" style="grid-template-columns:90px 1.2fr 1.2fr 100px 110px 90px;">
+            <div class="date">14 Aug</div><div class="cat">Electricity<span class="sub">Common area · DHBVN</span></div>
+            <div class="vendor">DHBVN Ltd.</div><div class="bill">EL-0921</div>
+            <div class="amt">- ₹ 18,420.00</div><div style="display:flex; justify-content:center"><span class="status paid">Paid</span></div>
+          </div>
+          <div class="lrow" style="grid-template-columns:90px 1.2fr 1.2fr 100px 110px 90px;">
+            <div class="date">12 Aug</div><div class="cat">Housekeeping<span class="sub">Monthly contract</span></div>
+            <div class="vendor">CleanPro Services</div><div class="bill">HK-0442</div>
+            <div class="amt">- ₹ 42,000.00</div><div style="display:flex; justify-content:center"><span class="status paid">Paid</span></div>
+          </div>
+          <div class="lrow" style="grid-template-columns:90px 1.2fr 1.2fr 100px 110px 90px;">
+            <div class="date">10 Aug</div><div class="cat">Lift AMC<span class="sub">Quarterly service</span></div>
+            <div class="vendor">OTIS Elevators</div><div class="bill">AMC-118</div>
+            <div class="amt">- ₹ 27,850.00</div><div style="display:flex; justify-content:center"><span class="status paid">Paid</span></div>
+          </div>
+        <?php endif; ?>
       </div>
 
     </div>

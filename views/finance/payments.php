@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Payments - Meridian Heights CHS</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -33,32 +34,22 @@
   .stat .label{font-size:11.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-soft); margin-bottom:8px;}
   .stat .val{font-family:'Fraunces',serif; font-size:26px; font-weight:600;}
   .stat .sub{font-size:12px; color:var(--ink-soft); margin-top:4px;}
-  .tabs{display:flex; gap:4px; margin-bottom:16px; border-bottom:1px solid var(--line);}
-  .tab{font-size:13.5px; font-weight:500; padding:10px 18px; color:var(--ink-soft); cursor:pointer; border-bottom:2px solid transparent;}
-  .tab.active{color:var(--green-dark); border-bottom-color:var(--green);}
   .controls{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:12px;}
   .chips{display:flex; gap:8px;}
   .chip{font-size:12.5px; padding:6px 13px; border-radius:20px; border:1px solid var(--line); background:var(--paper-raised); color:var(--ink-soft); cursor:pointer;}
   .chip.active{background:var(--green); border-color:var(--green); color:#fff;}
-  .search{font-size:13px; border:1px solid var(--line); background:var(--paper-raised); border-radius:8px; padding:9px 12px; width:200px;}
   .btn{border:none; font-family:'Inter',sans-serif; font-weight:500; font-size:13.5px; padding:11px 20px; border-radius:var(--radius); cursor:pointer; background:var(--green); color:#fff;}
   .ledger{background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
   .lrow{display:grid; align-items:center; padding:14px 20px; border-bottom:1px solid var(--line); gap:10px;}
   .lrow.head{background:var(--green-tint); font-size:11px; text-transform:uppercase; color:var(--green-dark); font-weight:600;}
-  .date{font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--ink-soft);}
   .flat{font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:500;}
   .owner{font-size:13.5px; font-weight:500;}
-  .owner .sub{display:block; font-size:11.5px; color:var(--ink-soft); font-weight:400;}
-  .amt{font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:500; text-align:right;}
-  .mode{font-size:12.5px; color:var(--ink-soft); display:flex; align-items:center; gap:6px;}
-  .dot{width:6px; height:6px; border-radius:50%; background:var(--green);}
-  .dot.gold{background:var(--gold);}
-  .ref{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink-soft);}
-  .status{font-size:11px; padding:4px 10px; border-radius:20px; font-weight:500;}
-  .status.settled{background:var(--green-tint); color:var(--green-dark);}
-  .status.processing{background:var(--gold-tint); color:var(--gold);}
-  .status.failed{background:var(--rust-tint); color:var(--rust);}
-  .rowbtn{font-size:11.5px; padding:6px 10px; border-radius:7px; border:1px solid var(--line); background:#fff; color:var(--green-dark); cursor:pointer;}
+  .amt{font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:600; color:var(--green-dark); text-align:right;}
+  .status{font-size:11px; padding:4px 10px; border-radius:20px; font-weight:500; text-align:center;}
+  .status.paid{background:var(--green-tint); color:var(--green-dark);}
+  .alert { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 18px; line-height: 1.5; }
+  .alert-danger { background: var(--rust-tint); color: var(--rust); border: 1px solid rgba(177,74,46,0.3); }
+  .alert-success { background: var(--green-tint); color: var(--green-dark); border: 1px solid rgba(31,92,74,0.3); }
 </style>
 </head>
 <body>
@@ -70,46 +61,73 @@
     <div class="content-wrap">
 
       <div class="topbar">
-        <h1>Payments</h1>
-        <div class="meta">Bank account <b>HDFC ····4471</b><br>Gateway: Razorpay · Connected</div>
+        <h1>Payment Collections</h1>
+        <div class="meta">Financial Collections<br><b><?= count($payments ?? []) ?></b> transactions recorded</div>
       </div>
+
+      <?php
+      $flashSuccess = Session::getFlash('success');
+      $flashError = Session::getFlash('error');
+      ?>
+      <?php if ($flashSuccess): ?>
+        <div class="alert alert-success"><?= htmlspecialchars($flashSuccess) ?></div>
+      <?php endif; ?>
+      <?php if ($flashError): ?>
+        <div class="alert alert-danger"><?= htmlspecialchars($flashError) ?></div>
+      <?php endif; ?>
 
       <div class="stats">
-        <div class="stat"><div class="label">Collected today</div><div class="val">₹1,04,200</div><div class="sub">9 transactions</div></div>
-        <div class="stat"><div class="label">Collected this month</div><div class="val">₹6,55,200</div><div class="sub">61 transactions</div></div>
-        <div class="stat"><div class="label">Processing</div><div class="val">₹8,400</div><div class="sub">1 gateway payment</div></div>
-        <div class="stat"><div class="label">Receipts issued</div><div class="val">61</div><div class="sub">this month</div></div>
+        <div class="stat"><div class="label">Collected This Month</div><div class="val">₹ 6.55L</div><div class="sub">78 payments received</div></div>
+        <div class="stat"><div class="label">UPI / Online</div><div class="val">₹ 5.12L</div><div class="sub">78% via digital mode</div></div>
+        <div class="stat"><div class="label">Bank Transfer / Cheque</div><div class="val">₹ 1.43L</div><div class="sub">22% offline / NEFT</div></div>
+        <div class="stat"><div class="label">Receipts Generated</div><div class="val"><?= count($payments ?? []) ?: 78 ?></div><div class="sub">Auto-stamped</div></div>
       </div>
-
-      <div class="tabs"><div class="tab active">All payments</div><div class="tab">Online</div><div class="tab">Manual entry</div></div>
 
       <div class="controls">
         <div class="chips">
-          <div class="chip active">All modes</div><div class="chip">UPI</div><div class="chip">Card</div><div class="chip">Bank transfer</div><div class="chip">Cash</div><div class="chip">Cheque</div>
+          <div class="chip active">All payments</div>
+          <div class="chip">UPI</div>
+          <div class="chip">Bank Transfer</div>
+          <div class="chip">Cash</div>
         </div>
-        <div style="display:flex; gap:10px; align-items:center;">
-          <input class="search" placeholder="Search flat or owner">
-          <button class="btn" onclick="document.getElementById('collect').classList.add('open')">+ Collect payment</button>
-        </div>
+        <button class="btn" onclick="document.getElementById('collect').classList.add('open')">＋ Collect Payment</button>
       </div>
 
       <div class="ledger">
-        <div class="lrow head" style="grid-template-columns:110px 70px 1fr 100px 100px 120px 90px 70px;"><div>Date</div><div>Flat</div><div>Owner</div><div style="text-align:right">Amount</div><div>Mode</div><div>Reference</div><div style="text-align:center">Status</div><div></div></div>
+        <div class="lrow head" style="grid-template-columns:130px 90px 1.2fr 100px 110px 100px;">
+          <div>Receipt No</div><div>Flat</div><div>Owner / Resident</div><div style="text-align:center">Mode</div><div style="text-align:right">Amount</div><div style="text-align:center">Receipt</div>
+        </div>
         
-        <div class="lrow" style="grid-template-columns:110px 70px 1fr 100px 100px 120px 90px 70px;">
-          <div class="date">21 Aug, 9:14 AM</div><div class="flat">A-102</div><div class="owner">Rekha Iyer<span class="sub">Aug maintenance</span></div><div class="amt">₹10,000</div>
-          <div class="mode"><span class="dot"></span>UPI</div><div class="ref">pay_HJ8x21Kp</div><div style="display:flex; justify-content:center"><span class="status settled">Settled</span></div><div><button class="rowbtn" onclick="openReceipt()">Receipt</button></div>
-        </div>
-
-        <div class="lrow" style="grid-template-columns:110px 70px 1fr 100px 100px 120px 90px 70px;">
-          <div class="date">20 Aug, 6:47 PM</div><div class="flat">D-301</div><div class="owner">Meera Nair<span class="sub">Aug maintenance</span></div><div class="amt">₹8,400</div>
-          <div class="mode"><span class="dot gold"></span>Card</div><div class="ref">pay_GQ4z90Lm</div><div style="display:flex; justify-content:center"><span class="status processing">Processing</span></div><div><button class="rowbtn" style="opacity:.5">Receipt</button></div>
-        </div>
-
-        <div class="lrow" style="grid-template-columns:110px 70px 1fr 100px 100px 120px 90px 70px;">
-          <div class="date">19 Aug, 4:12 PM</div><div class="flat">B-115</div><div class="owner">Kavita Joshi<span class="sub">Aug maintenance</span></div><div class="amt">₹9,200</div>
-          <div class="mode"><span class="dot"></span>Cheque</div><div class="ref">Chq #004521</div><div style="display:flex; justify-content:center"><span class="status failed">Bounced</span></div><div><button class="rowbtn">Follow up</button></div>
-        </div>
+        <?php if (!empty($payments)): ?>
+          <?php foreach ($payments as $p): ?>
+            <div class="lrow" style="grid-template-columns:130px 90px 1.2fr 100px 110px 100px;">
+              <div class="flat"><?= htmlspecialchars($p['receipt_number']) ?></div>
+              <div class="flat"><?= htmlspecialchars($p['flat_number']) ?></div>
+              <div class="owner"><?= htmlspecialchars($p['owner_name']) ?><br><small><?= htmlspecialchars($p['payment_date']) ?></small></div>
+              <div style="text-align:center; font-size:12.5px;"><?= htmlspecialchars($p['payment_mode']) ?></div>
+              <div class="amt">+ ₹ <?= number_format($p['amount'], 2) ?></div>
+              <div style="text-align:center">
+                <button class="btn" style="padding:4px 10px; font-size:11px;" onclick="openReceipt('<?= $p['receipt_number'] ?>', '<?= $p['flat_number'] ?>', '<?= number_format($p['amount'], 2) ?>')">View Receipt</button>
+              </div>
+            </div>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <!-- Demo payments if DB is fresh -->
+          <div class="lrow" style="grid-template-columns:130px 90px 1.2fr 100px 110px 100px;">
+            <div class="flat">RC-2026-0847</div><div class="flat">A-102</div>
+            <div class="owner">Rekha Iyer<br><small><?= date('Y-m-d') ?></small></div>
+            <div style="text-align:center; font-size:12.5px;">UPI</div>
+            <div class="amt">+ ₹ 10,000.00</div>
+            <div style="text-align:center"><button class="btn" style="padding:4px 10px; font-size:11px;" onclick="openReceipt('RC-2026-0847', 'A-102', '10,000.00')">View Receipt</button></div>
+          </div>
+          <div class="lrow" style="grid-template-columns:130px 90px 1.2fr 100px 110px 100px;">
+            <div class="flat">RC-2026-0846</div><div class="flat">C-201</div>
+            <div class="owner">Farhan Sheikh<br><small><?= date('Y-m-d', strtotime('-1 day')) ?></small></div>
+            <div style="text-align:center; font-size:12.5px;">Bank Transfer</div>
+            <div class="amt">+ ₹ 10,500.00</div>
+            <div style="text-align:center"><button class="btn" style="padding:4px 10px; font-size:11px;" onclick="openReceipt('RC-2026-0846', 'C-201', '10,500.00')">View Receipt</button></div>
+          </div>
+        <?php endif; ?>
       </div>
 
     </div>

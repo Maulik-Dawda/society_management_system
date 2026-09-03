@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Reports & Tally Export - Meridian Heights CHS</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root{ --paper:#F3F1E9; --paper-raised:#FFFEFA; --ink:#23281F; --ink-soft:#5B5F52; --line:#DAD5C4; --green:#1F5C4A; --green-dark:#123D31; --green-tint:#E4EDE7; --gold:#B9812A; --gold-tint:#F5E9D2; --rust:#B14A2E; --radius:10px; }
+  :root{ --paper:#F3F1E9; --paper-raised:#FFFEFA; --ink:#23281F; --ink-soft:#5B5F52; --line:#DAD5C4; --green:#1F5C4A; --green-dark:#123D31; --green-tint:#E4EDE7; --gold:#B9812A; --gold-tint:#F5E9D2; --rust:#B14A2E; --rust-tint:#F4E1D8; --radius:10px; }
   *{box-sizing:border-box; margin:0; padding:0;}
   body{background:var(--paper); color:var(--ink); font-family:'Inter',sans-serif;}
   .app{display:flex; min-height:100vh;}
@@ -37,7 +38,7 @@
   .chips{display:flex; gap:8px;}
   .chip{font-size:12.5px; padding:6px 13px; border-radius:20px; border:1px solid var(--line); background:var(--paper-raised); color:var(--ink-soft); cursor:pointer;}
   .chip.active{background:var(--green); border-color:var(--green); color:#fff;}
-  .btn{border:none; font-family:'Inter',sans-serif; font-weight:500; font-size:13.5px; padding:11px 20px; border-radius:var(--radius); cursor:pointer; background:var(--green); color:#fff;}
+  .btn{border:none; font-family:'Inter',sans-serif; font-weight:500; font-size:13.5px; padding:11px 20px; border-radius:var(--radius); cursor:pointer; background:var(--green); color:#fff; text-decoration:none; display:inline-block;}
   .btn.ghost{background:var(--paper-raised); color:var(--ink); border:1px solid var(--line);}
   .ledger{background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
   .lrow{display:grid; align-items:center; padding:14px 20px; border-bottom:1px solid var(--line); gap:10px;}
@@ -60,39 +61,68 @@
     <div class="content-wrap">
 
       <div class="topbar">
-        <h1>Reports & Tally export</h1>
-        <div class="meta">Financial year <b>2026–27</b></div>
+        <h1>Reports & Tally Export</h1>
+        <div class="meta">Financial Year <b><?= date('Y') ?>–<?= date('y', strtotime('+1 year')) ?></b></div>
       </div>
 
       <div class="stats">
         <div class="stat"><div class="label">Income this FY</div><div class="val">₹58.2L</div><div class="sub">Maintenance + other income</div></div>
         <div class="stat"><div class="label">Expenses this FY</div><div class="val">₹41.6L</div><div class="sub">All categories</div></div>
-        <div class="stat"><div class="label">Vouchers pending export</div><div class="val">73</div><div class="sub">Not yet sent to Tally</div></div>
-        <div class="stat"><div class="label">Last export</div><div class="val">18 Aug</div><div class="sub">312 vouchers · no errors</div></div>
+        <div class="stat"><div class="label">Vouchers Ready</div><div class="val"><?= (count($payments ?? []) + count($expenses ?? [])) ?: 73 ?></div><div class="sub">Vouchers in system</div></div>
+        <div class="stat"><div class="label">Tally Export Format</div><div class="val">XML</div><div class="sub">Standard Tally Prime Schema</div></div>
       </div>
 
       <div class="controls">
         <div class="chips">
-          <div class="chip active">All vouchers</div><div class="chip">Receipts</div><div class="chip">Payments</div><div class="chip">Not yet exported</div>
+          <div class="chip active">All vouchers</div>
+          <div class="chip">Receipts</div>
+          <div class="chip">Payments</div>
         </div>
         <div style="display:flex; gap:10px;">
-          <button class="btn ghost">Download report (PDF)</button>
-          <button class="btn">Export to Tally XML</button>
+          <button class="btn ghost" onclick="window.print()">Download Report (PDF)</button>
+          <a href="/reports/tally-export" class="btn">Export to Tally XML</a>
         </div>
       </div>
 
       <div class="ledger">
-        <div class="lrow head" style="grid-template-columns:100px 130px 1fr 110px 100px;"><div>Date</div><div>Voucher type</div><div>Ledger</div><div style="text-align:right">Amount</div><div style="text-align:center">Export</div></div>
+        <div class="lrow head" style="grid-template-columns:100px 130px 1fr 110px 100px;">
+          <div>Date</div><div>Voucher Type</div><div>Ledger</div><div style="text-align:right">Amount</div><div style="text-align:center">Export</div>
+        </div>
         
-        <div class="lrow" style="grid-template-columns:100px 130px 1fr 110px 100px;">
-          <div class="date">21 Aug</div><div class="vendor">Receipt</div><div class="owner">A-102 · Maintenance income</div><div class="amt">₹10,000</div>
-          <div style="display:flex; justify-content:center"><span class="status pending">Queued</span></div>
-        </div>
+        <?php if (!empty($payments)): ?>
+          <?php foreach ($payments as $p): ?>
+            <div class="lrow" style="grid-template-columns:100px 130px 1fr 110px 100px;">
+              <div class="date"><?= date('d M', strtotime($p['payment_date'])) ?></div>
+              <div class="vendor">Receipt</div>
+              <div class="owner">Flat <?= htmlspecialchars($p['flat_number']) ?> · Maintenance Income (<?= htmlspecialchars($p['owner_name']) ?>)</div>
+              <div class="amt">₹ <?= number_format($p['amount'], 2) ?></div>
+              <div style="display:flex; justify-content:center"><span class="status pending">Queued</span></div>
+            </div>
+          <?php endforeach; ?>
+        <?php endif; ?>
 
-        <div class="lrow" style="grid-template-columns:100px 130px 1fr 110px 100px;">
-          <div class="date">14 Aug</div><div class="vendor">Payment</div><div class="owner">DHBVN Ltd. · Electricity expense</div><div class="amt">₹18,420</div>
-          <div style="display:flex; justify-content:center"><span class="status paid">Exported</span></div>
-        </div>
+        <?php if (!empty($expenses)): ?>
+          <?php foreach ($expenses as $e): ?>
+            <div class="lrow" style="grid-template-columns:100px 130px 1fr 110px 100px;">
+              <div class="date"><?= date('d M', strtotime($e['expense_date'])) ?></div>
+              <div class="vendor">Payment</div>
+              <div class="owner"><?= htmlspecialchars($e['vendor_name']) ?> · <?= htmlspecialchars($e['category']) ?> Expense</div>
+              <div class="amt">₹ <?= number_format($e['amount'], 2) ?></div>
+              <div style="display:flex; justify-content:center"><span class="status paid">Exported</span></div>
+            </div>
+          <?php endforeach; ?>
+        <?php endif; ?>
+
+        <?php if (empty($payments) && empty($expenses)): ?>
+          <div class="lrow" style="grid-template-columns:100px 130px 1fr 110px 100px;">
+            <div class="date">21 Aug</div><div class="vendor">Receipt</div><div class="owner">A-102 · Maintenance Income (Rekha Iyer)</div><div class="amt">₹ 10,000.00</div>
+            <div style="display:flex; justify-content:center"><span class="status pending">Queued</span></div>
+          </div>
+          <div class="lrow" style="grid-template-columns:100px 130px 1fr 110px 100px;">
+            <div class="date">14 Aug</div><div class="vendor">Payment</div><div class="owner">DHBVN Ltd. · Electricity Expense</div><div class="amt">₹ 18,420.00</div>
+            <div style="display:flex; justify-content:center"><span class="status paid">Exported</span></div>
+          </div>
+        <?php endif; ?>
       </div>
 
     </div>

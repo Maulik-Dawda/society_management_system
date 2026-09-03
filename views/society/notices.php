@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Notice Board - Meridian Heights CHS</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -28,22 +29,22 @@
   .topbar{display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:28px; border-bottom:1.5px solid var(--ink); padding-bottom:18px;}
   .topbar h1{font-family:'Fraunces',serif; font-weight:600; font-size:32px;}
   .topbar .meta{text-align:right; font-size:12.5px; color:var(--ink-soft);}
-  .stats{display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line); border:1px solid var(--line); margin-bottom:24px; border-radius:var(--radius); overflow:hidden;}
-  .stat{background:var(--paper-raised); padding:18px 20px;}
-  .stat .label{font-size:11.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-soft); margin-bottom:8px;}
-  .stat .val{font-family:'Fraunces',serif; font-size:26px; font-weight:600;}
-  .stat .sub{font-size:12px; color:var(--ink-soft); margin-top:4px;}
+  .controls{display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px;}
+  .chips{display:flex; gap:8px;}
+  .chip{font-size:12.5px; padding:6px 13px; border-radius:20px; border:1px solid var(--line); background:var(--paper-raised); color:var(--ink-soft); cursor:pointer;}
+  .chip.active{background:var(--green); border-color:var(--green); color:#fff;}
   .btn{border:none; font-family:'Inter',sans-serif; font-weight:500; font-size:13.5px; padding:11px 20px; border-radius:var(--radius); cursor:pointer; background:var(--green); color:#fff;}
-  .ledger{background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
-  .lrow{display:grid; align-items:center; padding:14px 20px; border-bottom:1px solid var(--line); gap:10px;}
-  .lrow.head{background:var(--green-tint); font-size:11px; text-transform:uppercase; color:var(--green-dark); font-weight:600;}
-  .date{font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--ink-soft);}
-  .cat{font-size:13.5px; font-weight:500;}
-  .cat .sub{display:block; font-size:11.5px; color:var(--ink-soft); font-weight:400;}
-  .status{font-size:11px; padding:4px 10px; border-radius:20px; font-weight:500; width:fit-content;}
-  .status.paid{background:var(--green-tint); color:var(--green-dark);}
-  .status.pending{background:var(--gold-tint); color:var(--gold);}
-  .status.rejected{background:var(--rust-tint); color:var(--rust);}
+  .noticegrid{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
+  .ncard{background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius); padding:24px; position:relative;}
+  .ncard.urgent{border-left:4px solid var(--rust);}
+  .ncard .tag{font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--gold); margin-bottom:8px;}
+  .ncard.urgent .tag{color:var(--rust);}
+  .ncard h2{font-family:'Fraunces',serif; font-size:19px; font-weight:600; margin-bottom:10px; color:var(--green-dark);}
+  .ncard .body{font-size:13.5px; color:var(--ink-soft); line-height:1.6; margin-bottom:16px;}
+  .ncard .foot{font-size:11.5px; color:var(--ink-soft); border-top:1px solid var(--line); padding-top:12px; display:flex; justify-content:space-between;}
+  .alert { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 18px; line-height: 1.5; }
+  .alert-danger { background: var(--rust-tint); color: var(--rust); border: 1px solid rgba(177,74,46,0.3); }
+  .alert-success { background: var(--green-tint); color: var(--green-dark); border: 1px solid rgba(31,92,74,0.3); }
 </style>
 </head>
 <body>
@@ -56,43 +57,59 @@
 
       <div class="topbar">
         <h1>Notice Board</h1>
-        <div class="meta">4 wings · 84 flats</div>
+        <div class="meta">Society Announcements<br><b><?= count($notices ?? []) ?></b> published notices</div>
       </div>
 
-      <div class="stats">
-        <div class="stat"><div class="label">Active notices</div><div class="val">6</div><div class="sub">2 marked urgent</div></div>
-        <div class="stat"><div class="label">Posted this month</div><div class="val">11</div><div class="sub">avg. 82% read rate</div></div>
-        <div class="stat"><div class="label">Unread by residents</div><div class="val">17</div><div class="sub">across all notices</div></div>
-        <div class="stat"><div class="label">Circulars attached</div><div class="val">4</div><div class="sub">PDF documents</div></div>
+      <?php
+      $flashSuccess = Session::getFlash('success');
+      $flashError = Session::getFlash('error');
+      ?>
+      <?php if ($flashSuccess): ?>
+        <div class="alert alert-success"><?= htmlspecialchars($flashSuccess) ?></div>
+      <?php endif; ?>
+      <?php if ($flashError): ?>
+        <div class="alert alert-danger"><?= htmlspecialchars($flashError) ?></div>
+      <?php endif; ?>
+
+      <div class="controls">
+        <div class="chips">
+          <div class="chip active">All notices</div>
+          <div class="chip">General</div>
+          <div class="chip">Maintenance</div>
+          <div class="chip">Urgent</div>
+        </div>
+        <button class="btn" onclick="document.getElementById('postNoticeModal').classList.add('open')">＋ Post Notice</button>
       </div>
 
-      <div class="ledger">
-        <div class="lrow head" style="grid-template-columns:100px 1fr 110px 100px;"><div>Date</div><div>Notice</div><div style="text-align:center">Category</div><div style="text-align:center">Read</div></div>
-        
-        <div class="lrow" style="grid-template-columns:100px 1fr 110px 100px;">
-          <div class="date">20 Aug</div>
-          <div class="cat">Water supply shutdown on 23 Aug, 10am–2pm<span class="sub">Maintenance work on the main line</span></div>
-          <div style="display:flex; justify-content:center"><span class="status rejected">Urgent</span></div>
-          <div style="text-align:center" class="contact">61 / 84</div>
-        </div>
+      <div class="noticegrid">
+        <?php if (!empty($notices)): ?>
+          <?php foreach ($notices as $n): ?>
+            <div class="ncard <?= $n['is_urgent'] ? 'urgent' : '' ?>">
+              <div class="tag"><?= $n['is_urgent'] ? '⚠️ URGENT · ' : '' ?><?= htmlspecialchars($n['category']) ?></div>
+              <h2><?= htmlspecialchars($n['title']) ?></h2>
+              <div class="body"><?= nl2br(htmlspecialchars($n['content'])) ?></div>
+              <div class="foot">
+                <span>Posted on <?= date('d M Y', strtotime($n['notice_date'])) ?></span>
+                <span>Managing Committee</span>
+              </div>
+            </div>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <!-- Demo notices if DB is fresh -->
+          <div class="ncard urgent">
+            <div class="tag">⚠️ URGENT · Water Supply</div>
+            <h2>Water Tank Cleaning Schedule</h2>
+            <div class="body">Overhead water tank cleaning is scheduled for this Sunday from 9:00 AM to 2:00 PM. Water supply will remain suspended during this window. Please store sufficient water in advance.</div>
+            <div class="foot"><span>Posted on <?= date('d M Y') ?></span><span>Managing Committee</span></div>
+          </div>
 
-        <div class="lrow" style="grid-template-columns:100px 1fr 110px 100px;">
-          <div class="date">18 Aug</div>
-          <div class="cat">Ganesh Chaturthi celebration — RSVP<span class="sub">Clubhouse, 27 Aug 6pm onward</span></div>
-          <div style="display:flex; justify-content:center"><span class="status paid">Event</span></div>
-          <div style="text-align:center" class="contact">74 / 84</div>
-        </div>
-
-        <div class="lrow" style="grid-template-columns:100px 1fr 110px 100px;">
-          <div class="date">12 Aug</div>
-          <div class="cat">AGM minutes — July 2026<span class="sub">Circular attached</span></div>
-          <div style="display:flex; justify-content:center"><span class="status pending">General</span></div>
-          <div style="text-align:center" class="contact">55 / 84</div>
-        </div>
-      </div>
-
-      <div style="margin-top:20px;">
-        <button class="btn">+ Post notice</button>
+          <div class="ncard">
+            <div class="tag">General · Annual Meeting</div>
+            <h2>Annual General Body Meeting (AGM)</h2>
+            <div class="body">Notice is hereby given that the 12th Annual General Body Meeting of Meridian Heights CHS will be held on 15th September 2026 at the Clubhouse. All members are requested to attend.</div>
+            <div class="foot"><span>Posted on <?= date('d M Y', strtotime('-3 days')) ?></span><span>Secretary</span></div>
+          </div>
+        <?php endif; ?>
       </div>
 
     </div>

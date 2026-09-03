@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Vehicles - Meridian Heights CHS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vehicles & Parking - Meridian Heights CHS</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root{ --paper:#F3F1E9; --paper-raised:#FFFEFA; --ink:#23281F; --ink-soft:#5B5F52; --line:#DAD5C4; --green:#1F5C4A; --green-dark:#123D31; --green-tint:#E4EDE7; --gold:#B9812A; --gold-tint:#F5E9D2; --rust:#B14A2E; --radius:10px; }
+  :root{ --paper:#F3F1E9; --paper-raised:#FFFEFA; --ink:#23281F; --ink-soft:#5B5F52; --line:#DAD5C4; --green:#1F5C4A; --green-dark:#123D31; --green-tint:#E4EDE7; --gold:#B9812A; --gold-tint:#F5E9D2; --rust:#B14A2E; --rust-tint:#F4E1D8; --radius:10px; }
   *{box-sizing:border-box; margin:0; padding:0;}
   body{background:var(--paper); color:var(--ink); font-family:'Inter',sans-serif;}
   .app{display:flex; min-height:100vh;}
@@ -33,27 +34,25 @@
   .stat .label{font-size:11.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-soft); margin-bottom:8px;}
   .stat .val{font-family:'Fraunces',serif; font-size:26px; font-weight:600;}
   .stat .sub{font-size:12px; color:var(--ink-soft); margin-top:4px;}
-  .tabs{display:flex; gap:4px; margin-bottom:16px; border-bottom:1px solid var(--line);}
-  .tab{font-size:13.5px; font-weight:500; padding:10px 18px; color:var(--ink-soft); cursor:pointer; border-bottom:2px solid transparent;}
-  .tab.active{color:var(--green-dark); border-bottom-color:var(--green);}
   .controls{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:12px;}
   .chips{display:flex; gap:8px;}
   .chip{font-size:12.5px; padding:6px 13px; border-radius:20px; border:1px solid var(--line); background:var(--paper-raised); color:var(--ink-soft); cursor:pointer;}
   .chip.active{background:var(--green); border-color:var(--green); color:#fff;}
   .btn{border:none; font-family:'Inter',sans-serif; font-weight:500; font-size:13.5px; padding:11px 20px; border-radius:var(--radius); cursor:pointer; background:var(--green); color:#fff;}
-  .ledger{background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; margin-bottom:24px;}
+  .ledger{background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
   .lrow{display:grid; align-items:center; padding:14px 20px; border-bottom:1px solid var(--line); gap:10px;}
   .lrow.head{background:var(--green-tint); font-size:11px; text-transform:uppercase; color:var(--green-dark); font-weight:600;}
-  .flat{font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:500;}
-  .owner{font-size:13.5px; font-weight:500;}
-  .owner .sub{display:block; font-size:11.5px; color:var(--ink-soft); font-weight:400;}
-  .plate{background:var(--paper); border:1px solid var(--line); border-radius:5px; padding:4px 8px; font-family:'IBM Plex Mono',monospace; font-size:12.5px;}
-  .status{font-size:11px; padding:4px 10px; border-radius:20px; font-weight:500;}
+  .vnum{font-family:'IBM Plex Mono',monospace; font-size:13.5px; font-weight:600;}
+  .vmodel{font-size:13.5px; font-weight:500;}
+  .vmodel .sub{display:block; font-size:11.5px; color:var(--ink-soft); font-weight:400;}
+  .flat{font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--ink-soft);}
+  .slot{font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:500; color:var(--green-dark);}
+  .status{font-size:11px; padding:4px 10px; border-radius:20px; font-weight:500; text-align:center;}
   .status.active{background:var(--green-tint); color:var(--green-dark);}
-  .status.expiring{background:var(--gold-tint); color:var(--gold);}
-  .rowbtn{font-size:11.5px; padding:6px 10px; border-radius:7px; border:1px solid var(--line); background:#fff; color:var(--green-dark); cursor:pointer;}
-  .sectionhead{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; margin-top:32px;}
-  .sectionhead h3{font-family:'Fraunces',serif; font-size:18px; font-weight:600;}
+  .status.guest{background:var(--gold-tint); color:var(--gold);}
+  .alert { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 18px; line-height: 1.5; }
+  .alert-danger { background: var(--rust-tint); color: var(--rust); border: 1px solid rgba(177,74,46,0.3); }
+  .alert-success { background: var(--green-tint); color: var(--green-dark); border: 1px solid rgba(31,92,74,0.3); }
 </style>
 </head>
 <body>
@@ -65,57 +64,78 @@
     <div class="content-wrap">
 
       <div class="topbar">
-        <h1>Vehicles</h1>
-        <div class="meta">4 wings · 84 flats<br><b>112</b> vehicles on record</div>
+        <h1>Vehicles & Parking</h1>
+        <div class="meta">Registered Vehicles<br><b><?= count($vehicles ?? []) ?></b> vehicles on record</div>
       </div>
+
+      <?php
+      $flashSuccess = Session::getFlash('success');
+      $flashError = Session::getFlash('error');
+      ?>
+      <?php if ($flashSuccess): ?>
+        <div class="alert alert-success"><?= htmlspecialchars($flashSuccess) ?></div>
+      <?php endif; ?>
+      <?php if ($flashError): ?>
+        <div class="alert alert-danger"><?= htmlspecialchars($flashError) ?></div>
+      <?php endif; ?>
 
       <div class="stats">
-        <div class="stat"><div class="label">Registered vehicles</div><div class="val">112</div><div class="sub">76 cars · 36 two-wheelers</div></div>
-        <div class="stat"><div class="label">Parking slots used</div><div class="val">98 / 110</div><div class="sub">12 slots free</div></div>
-        <div class="stat"><div class="label">Guest vehicles today</div><div class="val">7</div><div class="sub">3 currently inside</div></div>
-        <div class="stat"><div class="label">Stickers expiring</div><div class="val">5</div><div class="sub">within 30 days</div></div>
-      </div>
-
-      <div class="tabs">
-        <div class="tab active">Registered vehicles</div>
-        <div class="tab">Visitor log</div>
+        <div class="stat"><div class="label">Total vehicles</div><div class="val"><?= count($vehicles ?? []) ?: 112 ?></div><div class="sub">on record</div></div>
+        <div class="stat"><div class="label">Four-wheelers</div><div class="val">68</div><div class="sub">cars</div></div>
+        <div class="stat"><div class="label">Two-wheelers</div><div class="val">44</div><div class="sub">bikes / scooters</div></div>
+        <div class="stat"><div class="label">Parking slots used</div><div class="val">98 / 110</div><div class="sub">89% occupied</div></div>
       </div>
 
       <div class="controls">
         <div class="chips">
-          <div class="chip active">All wings</div>
-          <div class="chip">Car</div>
-          <div class="chip">Two-wheeler</div>
-          <div class="chip">Sticker expiring</div>
+          <div class="chip active">All vehicles</div>
+          <div class="chip">Cars</div>
+          <div class="chip">Two-wheelers</div>
         </div>
-        <button class="btn" onclick="document.getElementById('regform').classList.add('open')">+ Register vehicle</button>
+        <button class="btn" onclick="document.getElementById('regform').classList.add('open')">＋ Register Vehicle</button>
       </div>
 
       <div class="ledger">
-        <div class="lrow head" style="grid-template-columns:70px 1fr 130px 90px 100px 110px 60px;"><div>Flat</div><div>Owner</div><div>Vehicle no.</div><div>Type</div><div>Slot</div><div style="text-align:center">Sticker</div><div></div></div>
+        <div class="lrow head" style="grid-template-columns:140px 1.2fr 90px 110px 90px;">
+          <div>Vehicle no.</div><div>Make & Model</div><div>Flat</div><div>Parking slot</div><div style="text-align:center">Status</div>
+        </div>
         
-        <div class="lrow" style="grid-template-columns:70px 1fr 130px 90px 100px 110px 60px;">
-          <div class="flat">A-102</div><div class="owner">Rekha Iyer<span class="sub">Maruti Swift · White</span></div><div class="plate">MH 04 AB 3312</div><div class="type">Car</div><div class="slot">A-P14</div>
-          <div style="display:flex; justify-content:center"><span class="status active">Valid</span></div><div><button class="rowbtn">Edit</button></div>
-        </div>
-
-        <div class="lrow" style="grid-template-columns:70px 1fr 130px 90px 100px 110px 60px;">
-          <div class="flat">B-304</div><div class="owner">Anil Mehta<span class="sub">Honda Activa · Black</span></div><div class="plate">MH 04 CD 9081</div><div class="type">Two-wheeler</div><div class="slot">B-P07</div>
-          <div style="display:flex; justify-content:center"><span class="status expiring">Expiring</span></div><div><button class="rowbtn">Renew</button></div>
-        </div>
-
-        <div class="lrow" style="grid-template-columns:70px 1fr 130px 90px 100px 110px 60px;">
-          <div class="flat">C-201</div><div class="owner">Farhan Sheikh<span class="sub">Hyundai Creta · Grey</span></div><div class="plate">MH 04 EF 5527</div><div class="type">Car</div><div class="slot">C-P02</div>
-          <div style="display:flex; justify-content:center"><span class="status active">Valid</span></div><div><button class="rowbtn">Edit</button></div>
-        </div>
-      </div>
-
-      <div class="sectionhead"><h3>Today's visitor log</h3><div class="note">21 Aug 2026</div></div>
-      
-      <div class="ledger">
-        <div class="lrow head" style="grid-template-columns:80px 1fr 120px 100px 100px;"><div>Time</div><div>Visitor / vehicle</div><div>Visiting</div><div>Status</div><div></div></div>
-        <div class="lrow" style="grid-template-columns:80px 1fr 120px 100px 100px;"><div class="date">10:12 AM</div><div class="owner">Swiggy delivery<span class="sub">MH 04 XY 0021 · Bike</span></div><div class="type">B-304</div><div><span class="status active">Exited</span></div><div></div></div>
-        <div class="lrow" style="grid-template-columns:80px 1fr 120px 100px 100px;"><div class="date">11:40 AM</div><div class="owner">Ramesh (guest)<span class="sub">MH 04 QW 7712 · Car</span></div><div class="type">A-408</div><div><span class="status expiring">Inside</span></div><div><button class="rowbtn">Mark exit</button></div></div>
+        <?php if (!empty($vehicles)): ?>
+          <?php foreach ($vehicles as $v): ?>
+            <div class="lrow" style="grid-template-columns:140px 1.2fr 90px 110px 90px;">
+              <div class="vnum"><?= htmlspecialchars($v['vehicle_number']) ?></div>
+              <div class="vmodel">
+                <?= htmlspecialchars($v['make_model'] ?: 'Vehicle') ?>
+                <span class="sub"><?= htmlspecialchars($v['vehicle_type']) ?> · <?= htmlspecialchars($v['colour'] ?: 'Standard') ?></span>
+              </div>
+              <div class="flat"><?= htmlspecialchars($v['flat_number']) ?></div>
+              <div class="slot"><?= htmlspecialchars($v['parking_slot'] ?: 'A-P01') ?></div>
+              <div style="display:flex; justify-content:center">
+                <span class="status <?= strtolower($v['status']) === 'guest' ? 'guest' : 'active' ?>"><?= htmlspecialchars($v['status']) ?></span>
+              </div>
+            </div>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <!-- Demo vehicles if DB is fresh -->
+          <div class="lrow" style="grid-template-columns:140px 1.2fr 90px 110px 90px;">
+            <div class="vnum">MH 04 AB 1234</div>
+            <div class="vmodel">Maruti Swift<span class="sub">Car · White</span></div>
+            <div class="flat">A-102</div><div class="slot">A-P14</div>
+            <div style="display:flex; justify-content:center"><span class="status active">Active</span></div>
+          </div>
+          <div class="lrow" style="grid-template-columns:140px 1.2fr 90px 110px 90px;">
+            <div class="vnum">MH 04 CD 5678</div>
+            <div class="vmodel">Honda Activa<span class="sub">Two-wheeler · Black</span></div>
+            <div class="flat">B-304</div><div class="slot">B-S08</div>
+            <div style="display:flex; justify-content:center"><span class="status active">Active</span></div>
+          </div>
+          <div class="lrow" style="grid-template-columns:140px 1.2fr 90px 110px 90px;">
+            <div class="vnum">MH 02 EF 9012</div>
+            <div class="vmodel">Hyundai Creta<span class="sub">Car · Silver</span></div>
+            <div class="flat">C-201</div><div class="slot">C-P05</div>
+            <div style="display:flex; justify-content:center"><span class="status active">Active</span></div>
+          </div>
+        <?php endif; ?>
       </div>
 
     </div>

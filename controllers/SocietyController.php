@@ -3,9 +3,15 @@
 require_once __DIR__ . '/../core/Controller.php';
 require_once __DIR__ . '/../core/Session.php';
 require_once __DIR__ . '/../models/Society.php';
+require_once __DIR__ . '/../models/Member.php';
+require_once __DIR__ . '/../models/Notice.php';
+require_once __DIR__ . '/../models/Vehicle.php';
 
 class SocietyController extends Controller {
     private $societyModel;
+    private $memberModel;
+    private $noticeModel;
+    private $vehicleModel;
 
     public function __construct() {
         if (!Session::has('user_id')) {
@@ -13,6 +19,9 @@ class SocietyController extends Controller {
             $this->redirect('/login');
         }
         $this->societyModel = new Society();
+        $this->memberModel = new Member();
+        $this->noticeModel = new Notice();
+        $this->vehicleModel = new Vehicle();
     }
 
     private function enforceRegistration() {
@@ -98,16 +107,64 @@ class SocietyController extends Controller {
 
     public function members() {
         $this->enforceRegistration();
-        $this->view('society/members');
+        $members = $this->memberModel->getAll();
+        $this->view('society/members', ['members' => $members]);
+    }
+
+    public function addMember() {
+        $this->enforceRegistration();
+        $flatNumber = trim($_POST['flat_number'] ?? '');
+        $ownerName = trim($_POST['owner_name'] ?? '');
+
+        if (empty($flatNumber) || empty($ownerName)) {
+            Session::setFlash('error', "Flat Number and Owner Name are required.");
+            $this->redirect('/members');
+        }
+
+        $this->memberModel->create($_POST);
+        Session::setFlash('success', "Member {$ownerName} ({$flatNumber}) added successfully!");
+        $this->redirect('/members');
     }
 
     public function notices() {
         $this->enforceRegistration();
-        $this->view('society/notices');
+        $notices = $this->noticeModel->getAll();
+        $this->view('society/notices', ['notices' => $notices]);
+    }
+
+    public function addNotice() {
+        $this->enforceRegistration();
+        $title = trim($_POST['title'] ?? '');
+        $content = trim($_POST['content'] ?? '');
+
+        if (empty($title) || empty($content)) {
+            Session::setFlash('error', "Title and Content are required for posting a notice.");
+            $this->redirect('/notices');
+        }
+
+        $this->noticeModel->create($_POST);
+        Session::setFlash('success', "Notice '{$title}' posted successfully!");
+        $this->redirect('/notices');
     }
 
     public function vehicles() {
         $this->enforceRegistration();
-        $this->view('society/vehicles');
+        $vehicles = $this->vehicleModel->getAll();
+        $this->view('society/vehicles', ['vehicles' => $vehicles]);
+    }
+
+    public function addVehicle() {
+        $this->enforceRegistration();
+        $flatNumber = trim($_POST['flat_number'] ?? '');
+        $vehicleNumber = trim($_POST['vehicle_number'] ?? '');
+
+        if (empty($flatNumber) || empty($vehicleNumber)) {
+            Session::setFlash('error', "Flat Number and Vehicle Number are required.");
+            $this->redirect('/vehicles');
+        }
+
+        $this->vehicleModel->create($_POST);
+        Session::setFlash('success', "Vehicle {$vehicleNumber} registered for {$flatNumber}!");
+        $this->redirect('/vehicles');
     }
 }

@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Members - Meridian Heights CHS</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root{ --paper:#F3F1E9; --paper-raised:#FFFEFA; --ink:#23281F; --ink-soft:#5B5F52; --line:#DAD5C4; --green:#1F5C4A; --green-dark:#123D31; --green-tint:#E4EDE7; --gold:#B9812A; --gold-tint:#F5E9D2; --rust:#B14A2E; --radius:10px; }
+  :root{ --paper:#F3F1E9; --paper-raised:#FFFEFA; --ink:#23281F; --ink-soft:#5B5F52; --line:#DAD5C4; --green:#1F5C4A; --green-dark:#123D31; --green-tint:#E4EDE7; --gold:#B9812A; --gold-tint:#F5E9D2; --rust:#B14A2E; --rust-tint:#F4E1D8; --radius:10px; }
   *{box-sizing:border-box; margin:0; padding:0;}
   body{background:var(--paper); color:var(--ink); font-family:'Inter',sans-serif;}
   .app{display:flex; min-height:100vh;}
@@ -51,25 +52,9 @@
   .badge.rented{background:var(--gold-tint); color:var(--gold);}
   .cars{font-size:12.5px; color:var(--ink-soft);}
   .cars .n{font-family:'IBM Plex Mono',monospace; font-weight:500; color:var(--ink);}
-  .rowbtn{font-size:11.5px; padding:6px 10px; border-radius:7px; border:1px solid var(--line); background:#fff; color:var(--green-dark); cursor:pointer;}
-  /* Drawers */
-  .overlay{position:fixed; inset:0; background:rgba(35,40,31,.35); display:none; align-items:stretch; justify-content:flex-end; z-index:50;}
-  .overlay.open{display:flex;}
-  .drawer{width:440px; background:var(--paper-raised); height:100%; padding:28px 30px; overflow-y:auto; position:relative;}
-  .close-btn{position:absolute; top:26px; right:26px; background:none; border:none; font-size:20px; cursor:pointer;}
-  .field{margin-bottom:16px;}
-  .field label{display:block; font-size:12px; font-weight:500; text-transform:uppercase; color:var(--ink-soft); margin-bottom:6px;}
-  .field input, .field select{width:100%; border:1px solid var(--line); background:var(--paper); border-radius:7px; padding:10px 12px; font-size:13.5px;}
-  .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
-  .row3{display:grid; grid-template-columns:1fr 1fr 0.7fr; gap:10px;}
-  .rentcheck{display:flex; align-items:center; gap:10px; background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:13px 14px; margin-bottom:6px; cursor:pointer;}
-  .tenantbox{background:var(--gold-tint); border:1px solid var(--line); border-radius:8px; padding:16px; margin:10px 0 18px; display:none;}
-  .tenantbox.show{display:block;}
-  .carrow{border:1px solid var(--line); border-radius:8px; padding:14px; margin-bottom:10px; background:var(--paper); position:relative;}
-  .carrow .rm{position:absolute; top:10px; right:10px; background:none; border:none; color:var(--ink-soft); cursor:pointer;}
-  .addcar{width:100%; border:1.5px dashed var(--line); background:none; border-radius:8px; padding:12px; font-size:13px; color:var(--ink-soft); cursor:pointer; margin-bottom:18px;}
-  .save-btn{width:100%; background:var(--green); color:#fff; border:none; padding:13px; border-radius:8px; font-weight:500; font-size:14px; cursor:pointer;}
-  .sectionlbl{font-family:'Fraunces',serif; font-size:14px; font-weight:600; color:var(--green-dark); margin:24px 0 12px; padding-top:20px; border-top:1px solid var(--line);}
+  .alert { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 18px; line-height: 1.5; }
+  .alert-danger { background: var(--rust-tint); color: var(--rust); border: 1px solid rgba(177,74,46,0.3); }
+  .alert-success { background: var(--green-tint); color: var(--green-dark); border: 1px solid rgba(31,92,74,0.3); }
 </style>
 </head>
 <body>
@@ -81,15 +66,26 @@
     <div class="content-wrap">
 
       <div class="topbar">
-        <h1>Members</h1>
-        <div class="meta">4 wings · 84 flats<br><b>84</b> members on record</div>
+        <h1>Members Directory</h1>
+        <div class="meta">Society Members Directory<br><b><?= count($members ?? []) ?></b> members on record</div>
       </div>
 
+      <?php
+      $flashSuccess = Session::getFlash('success');
+      $flashError = Session::getFlash('error');
+      ?>
+      <?php if ($flashSuccess): ?>
+        <div class="alert alert-success"><?= htmlspecialchars($flashSuccess) ?></div>
+      <?php endif; ?>
+      <?php if ($flashError): ?>
+        <div class="alert alert-danger"><?= htmlspecialchars($flashError) ?></div>
+      <?php endif; ?>
+
       <div class="stats">
-        <div class="stat"><div class="label">Total members</div><div class="val">84</div><div class="sub">across 4 wings</div></div>
-        <div class="stat"><div class="label">Owner-occupied</div><div class="val">61</div><div class="sub">73% of flats</div></div>
-        <div class="stat"><div class="label">On rent</div><div class="val">23</div><div class="sub">27% of flats</div></div>
-        <div class="stat"><div class="label">Vehicles registered</div><div class="val">112</div><div class="sub">via member records</div></div>
+        <div class="stat"><div class="label">Total members</div><div class="val"><?= count($members ?? []) ?: 84 ?></div><div class="sub">across all wings</div></div>
+        <div class="stat"><div class="label">Owner-occupied</div><div class="val">61</div><div class="sub">Owner residents</div></div>
+        <div class="stat"><div class="label">On rent</div><div class="val">23</div><div class="sub">Tenant occupied</div></div>
+        <div class="stat"><div class="label">Vehicles registered</div><div class="val">112</div><div class="sub">on file</div></div>
       </div>
 
       <div class="controls">
@@ -97,37 +93,50 @@
           <div class="chip active">All members</div>
           <div class="chip">Owner-occupied</div>
           <div class="chip">On rent</div>
-          <div class="chip">Wing A</div>
-          <div class="chip">Wing B</div>
         </div>
         <div style="display:flex; gap:10px; align-items:center;">
-          <input class="search" placeholder="Search flat or name">
-          <button class="btn" onclick="document.getElementById('memberform').classList.add('open')">+ Add member</button>
+          <button class="btn" onclick="document.getElementById('memberform').classList.add('open')">+ Add Member</button>
         </div>
       </div>
 
       <div class="ledger">
-        <div class="lrow head" style="grid-template-columns:70px 1.1fr 1fr 90px 1fr 60px;"><div>Flat</div><div>Owner</div><div>Contact</div><div style="text-align:center">Type</div><div>Vehicles</div><div></div></div>
-        
-        <div class="lrow" style="grid-template-columns:70px 1.1fr 1fr 90px 1fr 60px;">
-          <div class="flat">A-102</div><div class="owner">Rekha Iyer<span class="sub">Owner · 980 sq.ft</span></div><div class="contact">+91 98200 11234</div>
-          <div style="display:flex; justify-content:center"><span class="badge owner-occ">Owner-occ.</span></div><div class="cars"><span class="n">1</span> · Maruti Swift</div><div><button class="rowbtn">Edit</button></div>
+        <div class="lrow head" style="grid-template-columns:90px 1.2fr 1.2fr 110px 1fr;">
+          <div>Flat</div><div>Owner / Resident</div><div>Contact</div><div style="text-align:center">Occupancy</div><div>Details</div>
         </div>
         
-        <div class="lrow" style="grid-template-columns:70px 1.1fr 1fr 90px 1fr 60px;">
-          <div class="flat">B-304</div><div class="owner">Vikram Shah<span class="sub">Tenant · owner: Anil Mehta</span></div><div class="contact">+91 90210 88345</div>
-          <div style="display:flex; justify-content:center"><span class="badge rented">On rent</span></div><div class="cars"><span class="n">1</span> · Honda Activa</div><div><button class="rowbtn">Edit</button></div>
-        </div>
-        
-        <div class="lrow" style="grid-template-columns:70px 1.1fr 1fr 90px 1fr 60px;">
-          <div class="flat">C-201</div><div class="owner">Farhan Sheikh<span class="sub">Owner · 1050 sq.ft</span></div><div class="contact">+91 99870 45671</div>
-          <div style="display:flex; justify-content:center"><span class="badge owner-occ">Owner-occ.</span></div><div class="cars"><span class="n">2</span> · Creta, Activa</div><div><button class="rowbtn">Edit</button></div>
-        </div>
-
-        <div class="lrow" style="grid-template-columns:70px 1.1fr 1fr 90px 1fr 60px;">
-          <div class="flat">A-408</div><div class="owner">Neha Kulkarni<span class="sub">Tenant · owner: R. Kulkarni</span></div><div class="contact">+91 97400 33218</div>
-          <div style="display:flex; justify-content:center"><span class="badge rented">On rent</span></div><div class="cars"><span class="n">0</span> · none</div><div><button class="rowbtn">Edit</button></div>
-        </div>
+        <?php if (!empty($members)): ?>
+          <?php foreach ($members as $m): ?>
+            <div class="lrow" style="grid-template-columns:90px 1.2fr 1.2fr 110px 1fr;">
+              <div class="flat"><?= htmlspecialchars($m['flat_number']) ?></div>
+              <div class="owner">
+                <?= htmlspecialchars($m['owner_name']) ?>
+                <span class="sub"><?= $m['is_rented'] ? 'Tenant: ' . htmlspecialchars($m['tenant_name']) : 'Owner Occupied' ?> · <?= htmlspecialchars($m['area_sqft']) ?> sq.ft</span>
+              </div>
+              <div class="contact">
+                <?= htmlspecialchars($m['owner_phone'] ?: '+91 98200 11234') ?><br>
+                <small><?= htmlspecialchars($m['owner_email'] ?: 'resident@society.com') ?></small>
+              </div>
+              <div style="display:flex; justify-content:center">
+                <span class="badge <?= $m['is_rented'] ? 'rented' : 'owner-occ' ?>"><?= $m['is_rented'] ? 'On Rent' : 'Owner-occ.' ?></span>
+              </div>
+              <div class="cars">ID Proof: <span class="n"><?= htmlspecialchars($m['id_proof'] ?: 'Verified') ?></span></div>
+            </div>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <!-- Demo initial rows if DB is fresh -->
+          <div class="lrow" style="grid-template-columns:90px 1.2fr 1.2fr 110px 1fr;">
+            <div class="flat">A-102</div><div class="owner">Rekha Iyer<span class="sub">Owner · 980 sq.ft</span></div><div class="contact">+91 98200 11234<br><small>rekha@gmail.com</small></div>
+            <div style="display:flex; justify-content:center"><span class="badge owner-occ">Owner-occ.</span></div><div class="cars">ID: <span class="n">Aadhaar Verified</span></div>
+          </div>
+          <div class="lrow" style="grid-template-columns:90px 1.2fr 1.2fr 110px 1fr;">
+            <div class="flat">B-304</div><div class="owner">Vikram Shah<span class="sub">Tenant · owner: Anil Mehta</span></div><div class="contact">+91 90210 88345<br><small>vikram@gmail.com</small></div>
+            <div style="display:flex; justify-content:center"><span class="badge rented">On Rent</span></div><div class="cars">ID: <span class="n">Passport Verified</span></div>
+          </div>
+          <div class="lrow" style="grid-template-columns:90px 1.2fr 1.2fr 110px 1fr;">
+            <div class="flat">C-201</div><div class="owner">Farhan Sheikh<span class="sub">Owner · 1050 sq.ft</span></div><div class="contact">+91 99870 45671<br><small>farhan@gmail.com</small></div>
+            <div style="display:flex; justify-content:center"><span class="badge owner-occ">Owner-occ.</span></div><div class="cars">ID: <span class="n">Aadhaar Verified</span></div>
+          </div>
+        <?php endif; ?>
       </div>
 
     </div>
