@@ -1,13 +1,64 @@
-<!-- ===================== DRAWERS & MODALS ===================== -->
+<!-- ===================== DRAWERS & MODALS WITH ENHANCED FORM CSS ===================== -->
 <style>
-  .overlay { position: fixed; inset: 0; background: rgba(35,40,31,.35); display: none; align-items: stretch; justify-content: flex-end; z-index: 50; }
-  .overlay.open { display: flex !important; }
-  .drawer { width: 440px; background: var(--paper-raised, #FFFEFA); height: 100%; padding: 28px 30px; overflow-y: auto; box-shadow: -6px 0 24px rgba(0,0,0,.12); position: relative; }
-  .drawer h2 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 22px; margin-bottom: 4px; }
-  .drawer .hint { font-size: 12.5px; color: var(--ink-soft, #5B5F52); margin-bottom: 22px; }
-  .close-btn { position: absolute; top: 26px; right: 26px; background: none; border: none; font-size: 20px; color: var(--ink-soft, #5B5F52); cursor: pointer; }
-  .modal-overlay { position: fixed; inset: 0; background: rgba(35,40,31,.4); display: none; align-items: center; justify-content: center; z-index: 60; }
-  .modal-overlay.open { display: flex !important; }
+  :root {
+    --paper:#F3F1E9; --paper-raised:#FFFEFA; --ink:#23281F; --ink-soft:#5B5F52;
+    --line:#DAD5C4; --green:#1F5C4A; --green-dark:#123D31; --green-tint:#E4EDE7;
+    --gold:#B9812A; --gold-tint:#F5E9D2; --rust:#B14A2E; --rust-tint:#F4E1D8; --radius:10px;
+  }
+  
+  /* Overlays & Drawers */
+  .overlay { position: fixed; inset: 0; background: rgba(35,40,31,.45); backdrop-filter: blur(2px); display: none; align-items: stretch; justify-content: flex-end; z-index: 1000; }
+  .overlay.open { display: flex !important; animation: fadeIn 0.2s ease-out; }
+  .drawer { width: 460px; max-width: 90vw; background: var(--paper-raised); height: 100%; padding: 32px 30px 40px; overflow-y: auto; box-shadow: -10px 0 30px rgba(0,0,0,.15); position: relative; display: flex; flex-direction: column; }
+  .drawer h2 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 24px; color: var(--green-dark); margin-bottom: 4px; }
+  .drawer .hint { font-size: 13px; color: var(--ink-soft); margin-bottom: 24px; line-height: 1.4; }
+  .close-btn { position: absolute; top: 26px; right: 26px; background: rgba(0,0,0,0.04); border: 1px solid var(--line); width: 32px; height: 32px; border-radius: 50%; font-size: 16px; color: var(--ink-soft); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s ease; }
+  .close-btn:hover { background: var(--rust-tint); color: var(--rust); border-color: var(--rust); }
+  
+  /* Form Field Styles */
+  .field { margin-bottom: 18px; }
+  .field label { display: block; font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); margin-bottom: 6px; }
+  .field input[type="text"], .field input[type="number"], .field input[type="email"], .field input[type="date"], .field input[type="month"], .field select, .field textarea {
+    width: 100%; border: 1px solid var(--line); background: var(--paper); border-radius: 8px; padding: 11px 14px; font-family: 'Inter', sans-serif; font-size: 13.5px; color: var(--ink); transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--green); background: #fff; box-shadow: 0 0 0 3px rgba(31,92,74,0.12); }
+  .field select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235B5F52' d='M6 8.825L1.175 4 2.238 2.938 6 6.7 9.763 2.938 10.825 4z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+  .field textarea { resize: vertical; min-height: 90px; }
+  
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .sectionlbl { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 600; color: var(--green-dark); margin: 20px 0 14px; padding-top: 18px; border-top: 1px dashed var(--line); }
+  
+  /* Rent & Tenant Box */
+  .rentcheck { display: flex; align-items: flex-start; gap: 12px; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 14px; margin-bottom: 12px; cursor: pointer; }
+  .rentcheck input[type="checkbox"] { margin-top: 3px; accent-color: var(--green); width: 16px; height: 16px; }
+  .rentcheck .txt { font-size: 13.5px; font-weight: 500; color: var(--ink); }
+  .rentcheck .sub { display: block; font-size: 11.5px; color: var(--ink-soft); font-weight: 400; margin-top: 2px; }
+  .tenantbox { background: var(--gold-tint); border: 1px solid rgba(185,129,42,0.3); border-radius: 8px; padding: 16px; margin: 10px 0 20px; display: none; }
+  .tenantbox.show { display: block; animation: fadeIn 0.2s ease; }
+  .tenantbox .tlbl { font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--gold); margin-bottom: 12px; }
+  
+  /* Buttons */
+  .save-btn { width: 100%; background: var(--green); color: #fff; border: none; padding: 14px; border-radius: 8px; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14.5px; cursor: pointer; margin-top: 16px; transition: background 0.15s ease, transform 0.1s ease; }
+  .save-btn:hover { background: var(--green-dark); }
+  .save-btn:active { transform: scale(0.99); }
+  
+  /* Receipt Modal */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(35,40,31,.5); backdrop-filter: blur(3px); display: none; align-items: center; justify-content: center; z-index: 1100; }
+  .modal-overlay.open { display: flex !important; animation: fadeIn 0.2s ease-out; }
+  .receipt { width: 420px; background: #FFFEFA; border: 1px solid var(--line); border-radius: 12px; padding: 32px 30px; box-shadow: 0 12px 36px rgba(0,0,0,.2); position: relative; }
+  .receipt .stamp { position: absolute; top: 28px; right: 28px; border: 2px solid var(--green); color: var(--green); font-family: 'Fraunces', serif; font-weight: 600; font-size: 14px; letter-spacing: 0.1em; padding: 4px 10px; border-radius: 6px; transform: rotate(-8deg); opacity: 0.85; }
+  .receipt-top { border-bottom: 1.5px dashed var(--line); padding-bottom: 16px; margin-bottom: 18px; }
+  .receipt-top .rbrand { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; color: var(--green-dark); }
+  .receipt-top .rtitle { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); margin-top: 2px; }
+  .receipt-body .rline { display: flex; justify-content: space-between; font-size: 13.5px; margin-bottom: 10px; color: var(--ink-soft); }
+  .receipt-body .rline b { color: var(--ink); font-weight: 500; }
+  .rtotal { display: flex; justify-content: space-between; align-items: center; background: var(--green-tint); border-radius: 8px; padding: 14px 16px; margin: 18px 0; }
+  .rtotal .lbl { font-size: 12px; text-transform: uppercase; font-weight: 600; color: var(--green-dark); }
+  .rtotal .val { font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 600; color: var(--green-dark); }
+  .rfoot { font-size: 11px; color: var(--ink-soft); text-align: center; }
+  .rclose { position: absolute; top: 12px; right: 12px; background: none; border: none; font-size: 18px; cursor: pointer; color: var(--ink-soft); }
+  
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 </style>
 
 <!-- Add Member Drawer -->
