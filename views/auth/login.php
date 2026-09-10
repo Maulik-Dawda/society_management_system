@@ -28,6 +28,11 @@ require_once __DIR__ . '/../layouts/header.php';
             <div class="form-group" id="emailGroup" style="display:none;">
                 <label for="email">Admin Email Address</label>
                 <input type="email" id="email" name="email" class="form-control" placeholder="admin@society.com">
+                <div style="font-size:11.5px; color:var(--ink-soft); margin-top:6px; background:var(--paper); padding:8px 10px; border-radius:6px; border:1px solid var(--line);">
+                    🔑 <b>Default Admin Credentials:</b><br>
+                    Email: <code style="color:var(--green-dark);">admin@society.com</code><br>
+                    Password: <code style="color:var(--green-dark);">AdminPassword123!</code>
+                </div>
             </div>
 
             <div class="form-group">
@@ -64,6 +69,7 @@ function switchLoginTab(type) {
         mobileGrp.style.display = 'none';
         emailInput.required = true;
         mobileInput.required = false;
+        if (!emailInput.value) emailInput.value = 'admin@society.com';
     } else {
         tabUser.style.background = 'var(--green)';
         tabUser.style.color = '#fff';

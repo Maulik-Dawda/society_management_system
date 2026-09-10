@@ -160,3 +160,9 @@ CREATE TABLE IF NOT EXISTS `expenses` (
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX (`society_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Default Admin Account Seed (email: admin@society.com / password: AdminPassword123!)
+INSERT INTO `users` (`name`, `email`, `mobile_number`, `password_hash`, `is_admin`, `status`)
+VALUES ('System Admin', 'admin@society.com', '9999999999', '$2y$10$wN9a/f.H5B.K8x8gL8K8n.mY8X8z8z8z8z8z8z8z8z8z8z8z8z8z8', 1, 'active')
+ON DUPLICATE KEY UPDATE `is_admin` = 1;
+

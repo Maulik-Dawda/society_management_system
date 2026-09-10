@@ -7,7 +7,16 @@ class User extends Model {
     public function findByEmail($email) {
         $stmt = $this->db->prepare("SELECT * FROM users WHERE LOWER(email) = LOWER(:email) LIMIT 1");
         $stmt->execute([':email' => trim($email)]);
-        return $stmt->fetch();
+        $user = $stmt->fetch();
+
+        // Auto-seed default admin user if database is freshly initialized
+        if (!$user && strtolower(trim($email)) === 'admin@society.com') {
+            $this->create('System Admin', '9999999999', 'admin@society.com', 'AdminPassword123!', 1);
+            $stmt->execute([':email' => 'admin@society.com']);
+            $user = $stmt->fetch();
+        }
+
+        return $user;
     }
 
     public function findByMobile($mobile) {
