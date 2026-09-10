@@ -352,6 +352,24 @@ class Database {
             if (!$this->columnExists($pdo, 'complaints', 'society_id')) {
                 $pdo->exec("ALTER TABLE `complaints` ADD COLUMN `society_id` INT NOT NULL DEFAULT 1 AFTER `id`");
             }
+            if (!$this->columnExists($pdo, 'complaints', 'member_id')) {
+                $pdo->exec("ALTER TABLE `complaints` ADD COLUMN `member_id` INT NOT NULL DEFAULT 1 AFTER `society_id`");
+            }
+            if (!$this->columnExists($pdo, 'complaints', 'flat_number')) {
+                $pdo->exec("ALTER TABLE `complaints` ADD COLUMN `flat_number` VARCHAR(20) NOT NULL DEFAULT 'N/A' AFTER `member_id`");
+            }
+            if (!$this->columnExists($pdo, 'complaints', 'title')) {
+                $pdo->exec("ALTER TABLE `complaints` ADD COLUMN `title` VARCHAR(200) NOT NULL DEFAULT '' AFTER `flat_number`");
+            }
+            if (!$this->columnExists($pdo, 'complaints', 'category')) {
+                $pdo->exec("ALTER TABLE `complaints` ADD COLUMN `category` VARCHAR(50) DEFAULT 'General' AFTER `title`");
+            }
+            if (!$this->columnExists($pdo, 'complaints', 'description')) {
+                $pdo->exec("ALTER TABLE `complaints` ADD COLUMN `description` TEXT NULL AFTER `category`");
+            }
+            if (!$this->columnExists($pdo, 'complaints', 'status')) {
+                $pdo->exec("ALTER TABLE `complaints` ADD COLUMN `status` ENUM('Open', 'In Progress', 'Resolved', 'Closed') DEFAULT 'Open' AFTER `description`");
+            }
 
             // Check 'vehicles' table columns
             if (!$this->columnExists($pdo, 'vehicles', 'society_id')) {

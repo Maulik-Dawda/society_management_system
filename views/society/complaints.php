@@ -93,26 +93,28 @@
         <?php if (!empty($complaints)): ?>
           <?php foreach ($complaints as $comp): ?>
             <?php 
-              $stClass = strtolower(str_replace(' ', '-', $comp['status']));
+              $stVal = $comp['status'] ?? 'Open';
+              $stClass = strtolower(str_replace(' ', '-', $stVal));
+              $createdTime = !empty($comp['created_at']) ? date('d M Y, h:i A', strtotime($comp['created_at'])) : 'Recent';
             ?>
             <div class="lrow" style="grid-template-columns:80px 1.2fr 1fr 100px 110px 120px;">
-              <div class="flat"><?= htmlspecialchars($comp['flat_number']) ?></div>
+              <div class="flat"><?= htmlspecialchars($comp['flat_number'] ?? 'N/A') ?></div>
               <div style="font-weight:500; font-size:13.5px;">
-                <?= htmlspecialchars($comp['title']) ?>
-                <span style="display:block; font-size:11.5px; color:var(--ink-soft); font-weight:400;"><?= date('d M Y, h:i A', strtotime($comp['created_at'])) ?></span>
+                <?= htmlspecialchars($comp['title'] ?? 'Untitled') ?>
+                <span style="display:block; font-size:11.5px; color:var(--ink-soft); font-weight:400;"><?= $createdTime ?></span>
               </div>
-              <div style="font-size:12.5px; color:var(--ink-soft); line-height:1.4;"><?= htmlspecialchars($comp['description']) ?></div>
-              <div style="text-align:center; font-size:12px; color:var(--ink-soft);"><?= htmlspecialchars($comp['category']) ?></div>
+              <div style="font-size:12.5px; color:var(--ink-soft); line-height:1.4;"><?= htmlspecialchars($comp['description'] ?? '') ?></div>
+              <div style="text-align:center; font-size:12px; color:var(--ink-soft);"><?= htmlspecialchars($comp['category'] ?? 'General') ?></div>
               <div style="display:flex; justify-content:center">
-                <span class="status <?= $stClass ?>"><?= htmlspecialchars($comp['status']) ?></span>
+                <span class="status <?= $stClass ?>"><?= htmlspecialchars($stVal) ?></span>
               </div>
               <div style="text-align:center">
                 <form action="/complaints/update-status" method="POST" style="display:inline-block;">
-                  <input type="hidden" name="complaint_id" value="<?= $comp['id'] ?>">
+                  <input type="hidden" name="complaint_id" value="<?= $comp['id'] ?? 0 ?>">
                   <select name="status" onchange="this.form.submit()" style="font-size:11px; padding:4px 6px; border-radius:6px; border:1px solid var(--line);">
-                    <option value="Open" <?= $comp['status'] === 'Open' ? 'selected' : '' ?>>Open</option>
-                    <option value="In Progress" <?= $comp['status'] === 'In Progress' ? 'selected' : '' ?>>In Progress</option>
-                    <option value="Resolved" <?= $comp['status'] === 'Resolved' ? 'selected' : '' ?>>Resolved</option>
+                    <option value="Open" <?= $stVal === 'Open' ? 'selected' : '' ?>>Open</option>
+                    <option value="In Progress" <?= $stVal === 'In Progress' ? 'selected' : '' ?>>In Progress</option>
+                    <option value="Resolved" <?= $stVal === 'Resolved' ? 'selected' : '' ?>>Resolved</option>
                   </select>
                 </form>
               </div>

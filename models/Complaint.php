@@ -5,9 +5,17 @@ require_once __DIR__ . '/../core/Model.php';
 class Complaint extends Model {
 
     public function getAll($societyId = 1) {
-        $stmt = $this->db->prepare("SELECT c.*, m.owner_name, m.owner_phone FROM complaints c JOIN members m ON c.member_id = m.id WHERE c.society_id = :society_id ORDER BY c.created_at DESC");
+        $stmt = $this->db->prepare("SELECT c.*, m.owner_name, m.owner_phone FROM complaints c LEFT JOIN members m ON c.member_id = m.id WHERE c.society_id = :society_id ORDER BY c.created_at DESC, c.id DESC");
         $stmt->execute([':society_id' => $societyId]);
-        return $stmt->fetchAll();
+        $results = $stmt->fetchAll();
+
+        if (empty($results)) {
+            $stmtFallback = $this->db->prepare("SELECT c.*, m.owner_name, m.owner_phone FROM complaints c LEFT JOIN members m ON c.member_id = m.id ORDER BY c.created_at DESC, c.id DESC");
+            $stmtFallback->execute();
+            $results = $stmtFallback->fetchAll();
+        }
+
+        return $results;
     }
 
     public function getByMember($memberId) {
@@ -25,11 +33,11 @@ class Complaint extends Model {
 
         $stmt->execute([
             ':society_id' => $data['society_id'] ?? 1,
-            ':member_id' => $data['member_id'],
-            ':flat_number' => $data['flat_number'],
-            ':title' => $data['title'],
+            ':member_id' => $data['member_id'] ?? 1,
+            ':flat_number' => $data['flat_number'] ?? 'N/A',
+            ':title' => $data['title'] ?? 'Complaint',
             ':category' => $data['category'] ?? 'General',
-            ':description' => $data['description']
+            ':description' => $data['description'] ?? ''
         ]);
 
         return $this->db->lastInsertId();
