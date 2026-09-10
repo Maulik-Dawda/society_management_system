@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../core/Model.php';
+require_once __DIR__ . '/../core/Session.php';
 
 class Society extends Model {
 
@@ -13,6 +14,48 @@ class Society extends Model {
         $stmt = $this->db->prepare("SELECT * FROM societies WHERE id = :id LIMIT 1");
         $stmt->execute([':id' => $id]);
         return $stmt->fetch();
+    }
+
+    public function findByUserId($userId) {
+        if (Session::has('active_society_id') && Session::get('active_society_id')) {
+            $society = $this->findById(Session::get('active_society_id'));
+            if ($society) {
+                return $society;
+            }
+        }
+
+        // Check if user is linked to any society via member table
+        try {
+            $stmt = $this->db->prepare("SELECT s.* FROM societies s
+                JOIN members m ON s.id = m.society_id
+                JOIN users u ON u.id = :user_id
+                WHERE m.user_id = :user_id OR (u.mobile_number IS NOT NULL AND (m.owner_phone LIKE CONCAT('%', u.mobile_number) OR m.tenant_phone LIKE CONCAT('%', u.mobile_number)))
+                LIMIT 1");
+            $stmt->execute([':user_id' => $userId]);
+            $society = $stmt->fetch();
+            if ($society) {
+                return $society;
+            }
+        } catch (PDOException $e) {}
+
+        // Check if user created any society (Admin)
+        try {
+            $stmt = $this->db->prepare("SELECT s.* FROM societies s WHERE s.created_by_admin_id = :user_id ORDER BY s.id DESC LIMIT 1");
+            $stmt->execute([':user_id' => $userId]);
+            $society = $stmt->fetch();
+            if ($society) {
+                return $society;
+            }
+        } catch (PDOException $e) {}
+
+        // Fallback: return first created society in database if exists
+        try {
+            $stmt = $this->db->query("SELECT * FROM societies ORDER BY id ASC LIMIT 1");
+            $result = $stmt->fetch();
+            return $result ?: null;
+        } catch (PDOException $e) {
+            return null;
+        }
     }
 
     public function create($data, $adminId = null) {
