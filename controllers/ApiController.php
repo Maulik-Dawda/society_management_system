@@ -82,35 +82,122 @@ class ApiController extends Controller {
                     'name' => $user['name'],
                     'email' => $user['email'],
                     'is_admin' => true
-                ]
+                ],
+                'requires_society_selection' => false,
+                'redirect_url' => '/dashboard'
             ]);
         } else {
-            // Regular User Mobile Login (NO OTP!)
-            $mobile = trim($input['identifier'] ?? $input['mobile_number'] ?? '');
-            if (empty($mobile) || empty($password)) {
-                return $this->jsonResponse(['status' => 'error', 'message' => 'Mobile number and Password are required for User login.'], 400);
-            }
-
-            $user = $userModel->findByMobile($mobile);
-            if (!$user || !$userModel->verifyPassword($user, $password)) {
-                return $this->jsonResponse(['status' => 'error', 'message' => 'Invalid Mobile number or password.'], 401);
-            }
-
-            $societies = $userModel->getUserSocieties($mobile, $user['id']);
-
-            return $this->jsonResponse([
-                'status' => 'success',
-                'message' => 'User login successful',
-                'user' => [
-                    'id' => $user['id'],
-                    'name' => $user['name'],
-                    'mobile_number' => $user['mobile_number'],
-                    'is_admin' => false
-                ],
-                'societies_count' => count($societies),
-                'societies' => $societies
-            ]);
+            return $this->userLogin();
         }
+    }
+
+    // POST /api/v1/auth/user-login
+    public function userLogin() {
+        $input = $this->getJsonInput();
+        $mobile = trim($input['identifier'] ?? $input['mobile_number'] ?? $input['mobile'] ?? '');
+        $password = trim($input['password'] ?? '');
+
+        if (empty($mobile) || empty($password)) {
+            return $this->jsonResponse(['status' => 'error', 'message' => 'Mobile number and Password are required for User login.'], 400);
+        }
+
+        $cleanMobile = preg_replace('/[^0-9]/', '', $mobile);
+        $userModel = new User();
+        $user = $userModel->findByMobile($cleanMobile);
+
+        if (!$user || !$userModel->verifyPassword($user, $password)) {
+            return $this->jsonResponse(['status' => 'error', 'message' => 'Invalid Mobile number or password.'], 401);
+        }
+
+        // Credentials match! Check user's societies
+        $societies = $userModel->getUserSocieties($cleanMobile, $user['id']);
+        $societiesCount = count($societies);
+        $requiresSelection = ($societiesCount > 1);
+
+        if (session_status() === PHP_SESSION_ACTIVE && class_exists('Session')) {
+            Session::set('user_id', $user['id']);
+            Session::set('user_name', $user['name']);
+            Session::set('user_mobile', $user['mobile_number']);
+            Session::set('is_admin', 0);
+
+            if ($requiresSelection) {
+                Session::set('user_societies', $societies);
+            } else if ($societiesCount === 1) {
+                $soc = $societies[0];
+                Session::set('active_society_id', $soc['id']);
+                Session::set('active_society_name', $soc['name']);
+                Session::set('user_role', $soc['committee_role'] ?? 'Resident');
+                Session::set('user_flat', $soc['flat_number'] ?? '');
+                Session::set('user_member_id', $soc['member_id'] ?? null);
+            }
+        }
+
+        return $this->jsonResponse([
+            'status' => 'success',
+            'message' => 'Credentials verified successfully.',
+            'requires_society_selection' => $requiresSelection,
+            'redirect_url' => $requiresSelection ? '/select-society' : '/dashboard',
+            'user' => [
+                'id' => $user['id'],
+                'name' => $user['name'],
+                'mobile_number' => $user['mobile_number'],
+                'is_admin' => false
+            ],
+            'societies_count' => $societiesCount,
+            'societies' => $societies
+        ]);
+    }
+
+    // POST /api/v1/auth/select-society
+    public function selectSocietyApi() {
+        $input = $this->getJsonInput();
+        $societyId = intval($input['society_id'] ?? 0);
+        $userId = intval($input['user_id'] ?? (class_exists('Session') ? Session::get('user_id') : 0));
+        $mobile = trim($input['mobile_number'] ?? (class_exists('Session') ? Session::get('user_mobile') : ''));
+
+        if ($societyId <= 0) {
+            return $this->jsonResponse(['status' => 'error', 'message' => 'Valid society_id is required.'], 400);
+        }
+
+        $userModel = new User();
+        $societies = $userModel->getUserSocieties($mobile, $userId);
+
+        $selectedSoc = null;
+        foreach ($societies as $s) {
+            if (intval($s['id']) === $societyId) {
+                $selectedSoc = $s;
+                break;
+            }
+        }
+
+        if (!$selectedSoc) {
+            $societyModel = new Society();
+            $selectedSoc = $societyModel->findById($societyId);
+        }
+
+        if (!$selectedSoc) {
+            return $this->jsonResponse(['status' => 'error', 'message' => 'Society not found.'], 404);
+        }
+
+        if (session_status() === PHP_SESSION_ACTIVE && class_exists('Session')) {
+            Session::set('active_society_id', $selectedSoc['id']);
+            Session::set('active_society_name', $selectedSoc['name']);
+            Session::set('user_role', $selectedSoc['committee_role'] ?? 'Resident');
+            Session::set('user_flat', $selectedSoc['flat_number'] ?? '');
+            Session::set('user_member_id', $selectedSoc['member_id'] ?? null);
+        }
+
+        return $this->jsonResponse([
+            'status' => 'success',
+            'message' => "Selected society '{$selectedSoc['name']}'",
+            'active_society' => [
+                'id' => $selectedSoc['id'],
+                'name' => $selectedSoc['name'],
+                'flat_number' => $selectedSoc['flat_number'] ?? 'N/A',
+                'committee_role' => $selectedSoc['committee_role'] ?? 'Resident',
+                'member_id' => $selectedSoc['member_id'] ?? null
+            ]
+        ]);
     }
 
     // GET /api/v1/societies
