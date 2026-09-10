@@ -44,11 +44,20 @@ class AuthController extends Controller {
             Session::set('user_id', $user['id']);
             Session::set('user_name', $user['name']);
             Session::set('is_admin', 1);
-            Session::set('active_society_id', 1);
             Session::set('user_role', 'Admin');
 
-            Session::setFlash('success', "Welcome Admin {$user['name']}!");
-            $this->redirect('/registration');
+            $allSocieties = $this->societyModel->getAll();
+            if (count($allSocieties) > 1) {
+                Session::set('user_societies', $allSocieties);
+                Session::setFlash('success', "Welcome Admin {$user['name']}! Please select a society to proceed.");
+                $this->redirect('/select-society');
+            } else {
+                $firstSoc = $allSocieties[0] ?? null;
+                Session::set('active_society_id', $firstSoc['id'] ?? 1);
+                Session::set('active_society_name', $firstSoc['name'] ?? 'Meridian Heights');
+                Session::setFlash('success', "Welcome Admin {$user['name']}!");
+                $this->redirect('/dashboard');
+            }
         } else {
             // User Mobile Login (NO OTP!)
             $mobile = trim($_POST['mobile_number'] ?? '');
@@ -68,16 +77,18 @@ class AuthController extends Controller {
             Session::set('user_mobile', $user['mobile_number']);
             Session::set('is_admin', 0);
 
-            // Fetch societies associated with this user's mobile number
+            // Fetch societies associated with this user
             $societies = $this->userModel->getUserSocieties($user['mobile_number'], $user['id']);
+            $allSocieties = $this->societyModel->getAll();
 
-            if (empty($societies)) {
-                // If user has default society fallback
-                Session::set('active_society_id', 1);
-                Session::set('user_role', 'Resident');
-                $this->redirect('/dashboard');
+            if (count($societies) > 1 || count($allSocieties) > 1) {
+                // Multiple Societies exist: Ask user to select society after login!
+                $displaySocieties = count($societies) > 1 ? $societies : $allSocieties;
+                Session::set('user_societies', $displaySocieties);
+                Session::setFlash('info', "Please select which society you would like to enter.");
+                $this->redirect('/select-society');
             } elseif (count($societies) === 1) {
-                // Single Society: Skip select society page and go straight to dashboard
+                // Only 1 Society exists: Direct redirect to dashboard
                 $soc = $societies[0];
                 Session::set('active_society_id', $soc['id']);
                 Session::set('active_society_name', $soc['name']);
@@ -88,9 +99,9 @@ class AuthController extends Controller {
                 Session::setFlash('success', "Welcome back, {$user['name']}!");
                 $this->redirect('/dashboard');
             } else {
-                // Multiple Societies: Redirect to Select Society Page!
-                Session::set('user_societies', $societies);
-                $this->redirect('/select-society');
+                Session::set('active_society_id', 1);
+                Session::set('user_role', 'Resident');
+                $this->redirect('/dashboard');
             }
         }
     }

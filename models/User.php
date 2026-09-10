@@ -47,12 +47,13 @@ class User extends Model {
     }
 
     public function getUserSocieties($mobile, $userId = null) {
-        $cleanMobile = preg_replace('/[^0-9]/', '', $mobile);
+        $cleanMobile = preg_replace('/[^0-9]/', '', $mobile ?? '');
+        
+        // First check if user is registered in specific societies as a member
         $sql = "SELECT DISTINCT s.*, m.flat_number, m.committee_role, m.id as member_id
                 FROM societies s
                 JOIN members m ON s.id = m.society_id
                 WHERE (m.owner_phone LIKE :owner_phone OR m.tenant_phone LIKE :tenant_phone";
-        
         $params = [
             ':owner_phone' => "%" . $cleanMobile,
             ':tenant_phone' => "%" . $cleanMobile
@@ -65,7 +66,16 @@ class User extends Model {
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
-        return $stmt->fetchAll();
+        $userSocieties = $stmt->fetchAll();
+
+        // If user is linked to multiple specific member records, return them
+        if (!empty($userSocieties)) {
+            return $userSocieties;
+        }
+
+        // Fallback: If no direct member link found (e.g. System Admin or new user), return all registered societies
+        $stmtAll = $this->db->query("SELECT s.*, 'N/A' as flat_number, 'Resident' as committee_role, NULL as member_id FROM societies s ORDER BY s.name ASC");
+        return $stmtAll->fetchAll();
     }
 
     public function verifyPassword($user, $password) {
