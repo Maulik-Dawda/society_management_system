@@ -216,6 +216,38 @@
   </form>
 </div>
 
+<!-- Assign Committee Role Modal -->
+<div class="overlay" id="assignCommitteeModal">
+  <form class="drawer" action="/committee/assign" method="POST">
+    <button type="button" class="close-btn" onclick="document.getElementById('assignCommitteeModal').classList.remove('open')">✕</button>
+    <h2>Assign Committee Role</h2>
+    <div class="hint">Select a society member and assign an executive committee role.</div>
+    <div class="field">
+      <label>Select Member *</label>
+      <select name="member_id" id="assignMemberId" required>
+        <option value="">-- Choose Member --</option>
+        <?php if (!empty($allMembers)): ?>
+          <?php foreach ($allMembers as $m): ?>
+            <?php if (strtolower(trim($m['owner_email'] ?? '')) === 'maulik@septixtechnologies.com') continue; ?>
+            <option value="<?= $m['id'] ?>"><?= htmlspecialchars($m['owner_name']) ?> (Flat: <?= htmlspecialchars($m['flat_number']) ?>) - Current: <?= htmlspecialchars($m['committee_role'] ?? 'Resident') ?></option>
+          <?php endforeach; ?>
+        <?php endif; ?>
+      </select>
+    </div>
+    <div class="field">
+      <label>Designated Role *</label>
+      <select name="committee_role" id="assignCommitteeRoleSelect" required>
+        <option value="Chairman">★ Chairman</option>
+        <option value="Secretary">📜 Secretary</option>
+        <option value="Treasurer">💰 Treasurer</option>
+        <option value="Committee Member">🛡️ Committee Member</option>
+        <option value="Resident">🏠 Resident (Remove from Committee)</option>
+      </select>
+    </div>
+    <button type="submit" class="save-btn">Update Designation</button>
+  </form>
+</div>
+
 <!-- Receipt Preview Modal -->
 <div class="modal-overlay" id="receiptModal">
   <div class="receipt">

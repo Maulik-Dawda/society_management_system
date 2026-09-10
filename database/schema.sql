@@ -68,8 +68,12 @@ CREATE TABLE IF NOT EXISTS `members` (
     `agreement_start` DATE NULL,
     `agreement_end` DATE NULL,
     `id_proof` VARCHAR(50) NULL,
+    `committee_role` ENUM('Resident', 'Chairman', 'Secretary', 'Treasurer', 'Committee Member') DEFAULT 'Resident',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Migration helper if table already exists
+-- ALTER TABLE `members` ADD COLUMN IF NOT EXISTS `committee_role` ENUM('Resident', 'Chairman', 'Secretary', 'Treasurer', 'Committee Member') DEFAULT 'Resident';
 
 -- Vehicles table
 CREATE TABLE IF NOT EXISTS `vehicles` (

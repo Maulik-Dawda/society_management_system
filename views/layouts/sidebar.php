@@ -26,6 +26,7 @@ $currentUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
   <div class="navgroup">
     <div class="navlabel">Society</div>
     <a href="/members" data-page="members" class="navitem <?= (isset($activePage) && $activePage === 'members') ? 'active' : '' ?>"><span class="ic">☰</span><span>Members</span></a>
+    <a href="/committee" data-page="committee" class="navitem <?= (isset($activePage) && $activePage === 'committee') ? 'active' : '' ?>"><span class="ic">★</span><span>Committee</span></a>
     <a href="/notices" data-page="notices" class="navitem <?= (isset($activePage) && $activePage === 'notices') ? 'active' : '' ?>"><span class="ic">▤</span><span>Notice board</span></a>
     <a href="/vehicles" data-page="vehicles" class="navitem <?= (isset($activePage) && $activePage === 'vehicles') ? 'active' : '' ?>"><span class="ic">▭</span><span>Vehicles</span></a>
   </div>

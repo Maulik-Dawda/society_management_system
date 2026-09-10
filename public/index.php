@@ -38,6 +38,10 @@ try {
     $app->post('/members/add', ['SocietyController', 'addMember']);
     $app->get('/society/members', ['SocietyController', 'members']);
 
+    $app->get('/committee', ['SocietyController', 'committee']);
+    $app->post('/committee/assign', ['SocietyController', 'assignCommitteeRole']);
+    $app->get('/society/committee', ['SocietyController', 'committee']);
+
     $app->get('/notices', ['SocietyController', 'notices']);
     $app->post('/notices/add', ['SocietyController', 'addNotice']);
     $app->get('/society/notices', ['SocietyController', 'notices']);

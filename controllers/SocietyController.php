@@ -126,6 +126,32 @@ class SocietyController extends Controller {
         $this->redirect('/members');
     }
 
+    public function committee() {
+        $this->enforceRegistration();
+        $allMembers = $this->memberModel->getAll();
+        $committeeMembers = $this->memberModel->getCommitteeMembers();
+        
+        $this->view('society/committee', [
+            'allMembers' => $allMembers,
+            'committeeMembers' => $committeeMembers
+        ]);
+    }
+
+    public function assignCommitteeRole() {
+        $this->enforceRegistration();
+        $memberId = intval($_POST['member_id'] ?? 0);
+        $role = trim($_POST['committee_role'] ?? 'Resident');
+
+        if ($memberId <= 0) {
+            Session::setFlash('error', "Please select a valid member to assign a committee role.");
+            $this->redirect('/committee');
+        }
+
+        $this->memberModel->updateCommitteeRole($memberId, $role);
+        Session::setFlash('success', "Committee designation updated successfully to '{$role}'!");
+        $this->redirect('/committee');
+    }
+
     public function notices() {
         $this->enforceRegistration();
         $notices = $this->noticeModel->getAll();
