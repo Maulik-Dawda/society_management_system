@@ -249,6 +249,47 @@ class Database {
                 $pdo->exec("ALTER TABLE `users` MODIFY `mobile_number` VARCHAR(15) NULL");
             } catch (PDOException $e) {}
 
+            // Check 'societies' table columns
+            if (!$this->columnExists($pdo, 'societies', 'registration_number')) {
+                $pdo->exec("ALTER TABLE `societies` ADD COLUMN `registration_number` VARCHAR(100) NULL");
+            }
+            if (!$this->columnExists($pdo, 'societies', 'registration_date')) {
+                $pdo->exec("ALTER TABLE `societies` ADD COLUMN `registration_date` DATE NULL");
+            }
+            if (!$this->columnExists($pdo, 'societies', 'registered_address')) {
+                $pdo->exec("ALTER TABLE `societies` ADD COLUMN `registered_address` TEXT NULL");
+            }
+            if (!$this->columnExists($pdo, 'societies', 'pan_number')) {
+                $pdo->exec("ALTER TABLE `societies` ADD COLUMN `pan_number` VARCHAR(10) NULL");
+            }
+            if (!$this->columnExists($pdo, 'societies', 'gstin')) {
+                $pdo->exec("ALTER TABLE `societies` ADD COLUMN `gstin` VARCHAR(15) NULL");
+            }
+            if (!$this->columnExists($pdo, 'societies', 'total_wings')) {
+                $pdo->exec("ALTER TABLE `societies` ADD COLUMN `total_wings` INT DEFAULT 4");
+            }
+            if (!$this->columnExists($pdo, 'societies', 'total_flats')) {
+                $pdo->exec("ALTER TABLE `societies` ADD COLUMN `total_flats` INT DEFAULT 84");
+            }
+            if (!$this->columnExists($pdo, 'societies', 'total_members')) {
+                $pdo->exec("ALTER TABLE `societies` ADD COLUMN `total_members` INT DEFAULT 84");
+            }
+            if (!$this->columnExists($pdo, 'societies', 'bank_balance')) {
+                $pdo->exec("ALTER TABLE `societies` ADD COLUMN `bank_balance` DECIMAL(15,2) DEFAULT 0.00");
+            }
+            if (!$this->columnExists($pdo, 'societies', 'cash_in_hand')) {
+                $pdo->exec("ALTER TABLE `societies` ADD COLUMN `cash_in_hand` DECIMAL(15,2) DEFAULT 0.00");
+            }
+            if (!$this->columnExists($pdo, 'societies', 'bank_name')) {
+                $pdo->exec("ALTER TABLE `societies` ADD COLUMN `bank_name` VARCHAR(100) NULL");
+            }
+            if (!$this->columnExists($pdo, 'societies', 'account_number')) {
+                $pdo->exec("ALTER TABLE `societies` ADD COLUMN `account_number` VARCHAR(50) NULL");
+            }
+            if (!$this->columnExists($pdo, 'societies', 'created_by_admin_id')) {
+                $pdo->exec("ALTER TABLE `societies` ADD COLUMN `created_by_admin_id` INT NULL");
+            }
+
             // Check 'members' table columns
             if (!$this->columnExists($pdo, 'members', 'society_id')) {
                 $pdo->exec("ALTER TABLE `members` ADD COLUMN `society_id` INT NOT NULL DEFAULT 1 AFTER `id`");
@@ -258,6 +299,30 @@ class Database {
             }
             if (!$this->columnExists($pdo, 'members', 'user_id')) {
                 $pdo->exec("ALTER TABLE `members` ADD COLUMN `user_id` INT NULL");
+            }
+            if (!$this->columnExists($pdo, 'members', 'area_sqft')) {
+                $pdo->exec("ALTER TABLE `members` ADD COLUMN `area_sqft` INT DEFAULT 0");
+            }
+            if (!$this->columnExists($pdo, 'members', 'owner_email')) {
+                $pdo->exec("ALTER TABLE `members` ADD COLUMN `owner_email` VARCHAR(100) NULL");
+            }
+            if (!$this->columnExists($pdo, 'members', 'is_rented')) {
+                $pdo->exec("ALTER TABLE `members` ADD COLUMN `is_rented` TINYINT(1) DEFAULT 0");
+            }
+            if (!$this->columnExists($pdo, 'members', 'tenant_name')) {
+                $pdo->exec("ALTER TABLE `members` ADD COLUMN `tenant_name` VARCHAR(100) NULL");
+            }
+            if (!$this->columnExists($pdo, 'members', 'tenant_phone')) {
+                $pdo->exec("ALTER TABLE `members` ADD COLUMN `tenant_phone` VARCHAR(15) NULL");
+            }
+            if (!$this->columnExists($pdo, 'members', 'agreement_start')) {
+                $pdo->exec("ALTER TABLE `members` ADD COLUMN `agreement_start` DATE NULL");
+            }
+            if (!$this->columnExists($pdo, 'members', 'agreement_end')) {
+                $pdo->exec("ALTER TABLE `members` ADD COLUMN `agreement_end` DATE NULL");
+            }
+            if (!$this->columnExists($pdo, 'members', 'id_proof')) {
+                $pdo->exec("ALTER TABLE `members` ADD COLUMN `id_proof` VARCHAR(50) NULL");
             }
 
             // Check 'notices' table columns
