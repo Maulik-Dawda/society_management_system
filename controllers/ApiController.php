@@ -205,11 +205,11 @@ class ApiController extends Controller {
         $role = $selectedSoc['committee_role'] ?? 'Resident';
         $isChairman = ($role === 'Chairman');
 
+        $noticeUrlTemplate = "{$baseUrl}/api/v1/notices/add?society_id={$selectedSoc['id']}&phone_number={$mobile}&title={title}&content={content}&category=General&is_urgent=0";
+        $complaintUrlTemplate = "{$baseUrl}/api/v1/complaints/add?society_id={$selectedSoc['id']}&phone_number={$mobile}&title={title}&description={description}&category=General";
+
         $actionOption = $isChairman ? "Create Notice" : "Register Complaint";
-        $actionApiUrl = $isChairman ? "{$baseUrl}/api/v1/notices/add" : "{$baseUrl}/api/v1/complaints/add";
-        $requiredFields = $isChairman 
-            ? ["society_id", "phone_number", "title", "content"] 
-            : ["society_id", "phone_number", "title", "description"];
+        $actionUrl = $isChairman ? $noticeUrlTemplate : $complaintUrlTemplate;
 
         return $this->jsonResponse([
             'status' => 'success',
@@ -224,11 +224,9 @@ class ApiController extends Controller {
             'whatsapp_action' => [
                 'role' => $role,
                 'allowed_option' => $actionOption,
-                'api_url' => $actionApiUrl,
-                'required_fields' => $requiredFields,
-                'example_request' => $isChairman 
-                    ? "{$actionApiUrl}?society_id={$selectedSoc['id']}&phone_number={$mobile}&title=AGM+Meeting&content=Annual+general+meeting+on+Sunday"
-                    : "{$actionApiUrl}?society_id={$selectedSoc['id']}&phone_number={$mobile}&title=Water+Leakage&description=Leakage+in+main+pipe"
+                'action_url_template' => $actionUrl,
+                'notice_creation_url' => "{$baseUrl}/api/v1/notices/add?society_id={$selectedSoc['id']}&phone_number={$mobile}&title={title}&content={content}",
+                'complaint_registration_url' => "{$baseUrl}/api/v1/complaints/add?society_id={$selectedSoc['id']}&phone_number={$mobile}&title={title}&description={description}"
             ],
             'dashboard_url' => "{$baseUrl}/dashboard"
         ]);
