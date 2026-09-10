@@ -154,6 +154,21 @@ class ApiController extends Controller {
         return $this->jsonResponse(['status' => 'success', 'message' => 'Member added successfully!', 'member_id' => $memberId], 201);
     }
 
+    // POST /api/v1/members/update-role
+    public function updateMemberRole() {
+        $input = $this->getJsonInput();
+        $memberId = intval($input['member_id'] ?? 0);
+        $role = trim($input['committee_role'] ?? 'Resident');
+
+        if ($memberId <= 0) {
+            return $this->jsonResponse(['status' => 'error', 'message' => 'Valid member_id is required.'], 400);
+        }
+
+        $memberModel = new Member();
+        $memberModel->updateCommitteeRole($memberId, $role);
+        return $this->jsonResponse(['status' => 'success', 'message' => "User role updated successfully to '{$role}'"]);
+    }
+
     // GET /api/v1/notices?society_id=X
     public function getNotices() {
         $societyId = intval($_GET['society_id'] ?? 1);

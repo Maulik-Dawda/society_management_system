@@ -16,6 +16,7 @@ try {
     $app->post('/api/v1/societies/register', ['ApiController', 'registerSociety']);
     $app->get('/api/v1/members', ['ApiController', 'getMembers']);
     $app->post('/api/v1/members/add', ['ApiController', 'addMember']);
+    $app->post('/api/v1/members/update-role', ['ApiController', 'updateMemberRole']);
     $app->get('/api/v1/notices', ['ApiController', 'getNotices']);
     $app->post('/api/v1/notices/add', ['ApiController', 'addNotice']);
     $app->get('/api/v1/complaints', ['ApiController', 'getComplaints']);

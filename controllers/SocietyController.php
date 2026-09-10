@@ -137,15 +137,16 @@ class SocietyController extends Controller {
     public function assignCommitteeRole() {
         $memberId = intval($_POST['member_id'] ?? 0);
         $role = trim($_POST['committee_role'] ?? 'Resident');
+        $referer = $_SERVER['HTTP_REFERER'] ?? '/committee';
 
         if ($memberId <= 0) {
             Session::setFlash('error', "Please select a valid member.");
-            $this->redirect('/committee');
+            $this->redirect($referer);
         }
 
         $this->memberModel->updateCommitteeRole($memberId, $role);
-        Session::setFlash('success', "Committee designation updated successfully to '{$role}'!");
-        $this->redirect('/committee');
+        Session::setFlash('success', "User role and designation updated successfully to '{$role}'!");
+        $this->redirect($referer);
     }
 
     public function notices() {

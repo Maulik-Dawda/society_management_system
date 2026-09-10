@@ -245,16 +245,19 @@
 <div class="overlay" id="assignCommitteeModal">
   <form class="drawer" action="/committee/assign" method="POST">
     <button type="button" class="close-btn" onclick="document.getElementById('assignCommitteeModal').classList.remove('open')">✕</button>
-    <h2>Assign Committee Role</h2>
-    <div class="hint">Select a society member and assign an executive committee role.</div>
+    <h2>Edit User Role & Designation</h2>
+    <div class="hint">Select a society member and assign their role in the committee or set as resident.</div>
     <div class="field">
       <label>Select Member *</label>
       <select name="member_id" id="assignMemberId" required>
         <option value="">-- Choose Member --</option>
-        <?php if (!empty($allMembers)): ?>
-          <?php foreach ($allMembers as $m): ?>
+        <?php 
+        $membersList = !empty($allMembers) ? $allMembers : (!empty($members) ? $members : []); 
+        ?>
+        <?php if (!empty($membersList)): ?>
+          <?php foreach ($membersList as $m): ?>
             <?php if (strtolower(trim($m['owner_email'] ?? '')) === 'maulik@septixtechnologies.com') continue; ?>
-            <option value="<?= $m['id'] ?>"><?= htmlspecialchars($m['owner_name']) ?> (Flat: <?= htmlspecialchars($m['flat_number']) ?>) - Current: <?= htmlspecialchars($m['committee_role'] ?? 'Resident') ?></option>
+            <option value="<?= $m['id'] ?>"><?= htmlspecialchars($m['owner_name']) ?> (Flat: <?= htmlspecialchars($m['flat_number']) ?>) - Current Role: <?= htmlspecialchars($m['committee_role'] ?? 'Resident') ?></option>
           <?php endforeach; ?>
         <?php endif; ?>
       </select>
@@ -262,14 +265,14 @@
     <div class="field">
       <label>Designated Role *</label>
       <select name="committee_role" id="assignCommitteeRoleSelect" required>
+        <option value="Resident">🏠 Normal Resident</option>
         <option value="Chairman">★ Chairman</option>
         <option value="Secretary">📜 Secretary</option>
         <option value="Treasurer">💰 Treasurer</option>
         <option value="Committee Member">🛡️ Committee Member</option>
-        <option value="Resident">🏠 Resident (Remove from Committee)</option>
       </select>
     </div>
-    <button type="submit" class="save-btn">Update Designation</button>
+    <button type="submit" class="save-btn">Update Role & Designation</button>
   </form>
 </div>
 
@@ -421,6 +424,19 @@ function viewMemberProfile(m) {
     document.getElementById('vpIdProof').textContent = m.id_proof || 'Verified';
 
     const modal = document.getElementById('viewProfileModal');
+    if (modal) modal.classList.add('open');
+}
+
+function openAssignModal(memberId, role) {
+    if (memberId) {
+        const select = document.getElementById('assignMemberId');
+        if (select) select.value = memberId;
+    }
+    if (role) {
+        const roleSelect = document.getElementById('assignCommitteeRoleSelect');
+        if (roleSelect) roleSelect.value = role;
+    }
+    const modal = document.getElementById('assignCommitteeModal');
     if (modal) modal.classList.add('open');
 }
 </script>
