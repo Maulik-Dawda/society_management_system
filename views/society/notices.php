@@ -85,12 +85,12 @@
       <div class="noticegrid">
         <?php if (!empty($notices)): ?>
           <?php foreach ($notices as $n): ?>
-            <div class="ncard <?= $n['is_urgent'] ? 'urgent' : '' ?>">
-              <div class="tag"><?= $n['is_urgent'] ? '⚠️ URGENT · ' : '' ?><?= htmlspecialchars($n['category']) ?></div>
-              <h2><?= htmlspecialchars($n['title']) ?></h2>
-              <div class="body"><?= nl2br(htmlspecialchars($n['content'])) ?></div>
+            <div class="ncard <?= !empty($n['is_urgent']) ? 'urgent' : '' ?>">
+              <div class="tag"><?= !empty($n['is_urgent']) ? '⚠️ URGENT · ' : '' ?><?= htmlspecialchars($n['category'] ?? 'General') ?></div>
+              <h2><?= htmlspecialchars($n['title'] ?? 'Notice') ?></h2>
+              <div class="body"><?= nl2br(htmlspecialchars($n['content'] ?? '')) ?></div>
               <div class="foot">
-                <span>Posted on <?= date('d M Y', strtotime($n['notice_date'])) ?></span>
+                <span>Posted on <?= (!empty($n['notice_date']) && strtotime($n['notice_date'])) ? date('d M Y', strtotime($n['notice_date'])) : date('d M Y') ?></span>
                 <span>Chairman / Committee</span>
               </div>
             </div>

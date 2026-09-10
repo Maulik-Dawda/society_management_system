@@ -332,6 +332,21 @@ class Database {
             if (!$this->columnExists($pdo, 'notices', 'created_by_user_id')) {
                 $pdo->exec("ALTER TABLE `notices` ADD COLUMN `created_by_user_id` INT NULL");
             }
+            if (!$this->columnExists($pdo, 'notices', 'notice_date')) {
+                $pdo->exec("ALTER TABLE `notices` ADD COLUMN `notice_date` DATE NULL");
+            }
+            if (!$this->columnExists($pdo, 'notices', 'title')) {
+                $pdo->exec("ALTER TABLE `notices` ADD COLUMN `title` VARCHAR(200) NOT NULL DEFAULT 'Notice'");
+            }
+            if (!$this->columnExists($pdo, 'notices', 'category')) {
+                $pdo->exec("ALTER TABLE `notices` ADD COLUMN `category` VARCHAR(50) DEFAULT 'General'");
+            }
+            if (!$this->columnExists($pdo, 'notices', 'is_urgent')) {
+                $pdo->exec("ALTER TABLE `notices` ADD COLUMN `is_urgent` TINYINT(1) DEFAULT 0");
+            }
+            if (!$this->columnExists($pdo, 'notices', 'content')) {
+                $pdo->exec("ALTER TABLE `notices` ADD COLUMN `content` TEXT NULL");
+            }
 
             // Check 'complaints' table columns
             if (!$this->columnExists($pdo, 'complaints', 'society_id')) {

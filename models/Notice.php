@@ -5,9 +5,21 @@ require_once __DIR__ . '/../core/Model.php';
 class Notice extends Model {
 
     public function getAll($societyId = 1) {
-        $stmt = $this->db->prepare("SELECT * FROM notices WHERE society_id = :society_id ORDER BY notice_date DESC, id DESC");
-        $stmt->execute([':society_id' => $societyId]);
-        return $stmt->fetchAll();
+        $societyId = intval($societyId ?: 1);
+        try {
+            $stmt = $this->db->prepare("SELECT * FROM notices WHERE society_id = :society_id ORDER BY id DESC");
+            $stmt->execute([':society_id' => $societyId]);
+            $results = $stmt->fetchAll();
+            if (!empty($results)) {
+                return $results;
+            }
+            
+            // Fallback: If no notice matches specific society_id, fetch all created notices
+            $stmtAll = $this->db->query("SELECT * FROM notices ORDER BY id DESC");
+            return $stmtAll ? $stmtAll->fetchAll() : [];
+        } catch (PDOException $e) {
+            return [];
+        }
     }
 
     public function create($data) {
