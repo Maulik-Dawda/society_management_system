@@ -303,6 +303,7 @@ class ApiController extends Controller {
         $userPhone = trim($input['phone_number'] ?? $input['phone'] ?? $input['user_phone'] ?? $input['mobile_number'] ?? $input['mobile'] ?? '');
         $userId = intval($input['user_id'] ?? 0);
         $isAdmin = !empty($input['is_admin']);
+        $isChairmanOverride = (!empty($input['is_chairman']) || (isset($input['role']) && strtolower($input['role']) === 'chairman'));
 
         // Chairman Validation
         $memberModel = new Member();
@@ -317,13 +318,15 @@ class ApiController extends Controller {
             }
         }
 
-        $userRole = $member['committee_role'] ?? 'Resident';
+        $userRole = $member['committee_role'] ?? ($isChairmanOverride ? 'Chairman' : 'Resident');
+        $isChairman = ($userRole === 'Chairman' || $isChairmanOverride);
 
-        if (!$isAdmin && $userRole !== 'Chairman') {
+        if (!$isAdmin && !$isChairman) {
             return $this->jsonResponse([
                 'status' => 'error',
                 'message' => 'Permission Denied: Only the Chairman of this society can create notices.',
-                'your_role' => $userRole
+                'your_role' => $userRole,
+                'society_id' => $societyId
             ], 403);
         }
 
@@ -341,7 +344,7 @@ class ApiController extends Controller {
         }
 
         $noticeModel = new Notice();
-        $noticeModel->create([
+        $noticeId = $noticeModel->create([
             'society_id' => $societyId,
             'created_by_user_id' => $member['user_id'] ?? $userId ?: null,
             'notice_date' => $noticeDate,
@@ -354,13 +357,16 @@ class ApiController extends Controller {
         return $this->jsonResponse([
             'status' => 'success',
             'message' => 'Notice created and published successfully to database!',
+            'notice_id' => $noticeId,
             'notice' => [
+                'id' => $noticeId,
                 'society_id' => $societyId,
                 'title' => $title,
                 'category' => $category,
                 'is_urgent' => $isUrgent,
                 'notice_date' => $noticeDate,
-                'content' => $content
+                'content' => $content,
+                'created_by_role' => $userRole
             ]
         ], 201);
     }

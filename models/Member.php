@@ -30,13 +30,27 @@ class Member extends Model {
 
     public function getMemberByPhoneAndSociety($phone, $societyId) {
         $cleanPhone = preg_replace('/[^0-9]/', '', $phone);
+        if (empty($cleanPhone)) return null;
+        $last10 = (strlen($cleanPhone) >= 10) ? substr($cleanPhone, -10) : $cleanPhone;
+
         $stmt = $this->db->prepare("SELECT * FROM members WHERE society_id = :society_id AND (owner_phone LIKE :owner_phone OR tenant_phone LIKE :tenant_phone) LIMIT 1");
         $stmt->execute([
             ':society_id' => $societyId,
-            ':owner_phone' => "%{$cleanPhone}",
-            ':tenant_phone' => "%{$cleanPhone}"
+            ':owner_phone' => "%{$last10}",
+            ':tenant_phone' => "%{$last10}"
         ]);
-        return $stmt->fetch();
+        $member = $stmt->fetch();
+
+        if (!$member) {
+            $stmt2 = $this->db->prepare("SELECT * FROM members WHERE owner_phone LIKE :owner_phone OR tenant_phone LIKE :tenant_phone LIMIT 1");
+            $stmt2->execute([
+                ':owner_phone' => "%{$last10}",
+                ':tenant_phone' => "%{$last10}"
+            ]);
+            $member = $stmt2->fetch();
+        }
+
+        return $member;
     }
 
     public function updateCommitteeRole($memberId, $role) {
