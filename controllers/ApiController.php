@@ -114,6 +114,16 @@ class ApiController extends Controller {
         $societiesCount = count($societies);
         $requiresSelection = ($societiesCount > 1);
 
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'chocolate-chimpanzee-235196.hostingersite.com';
+        $baseUrl = "{$protocol}://{$host}";
+
+        // Attach dynamic select_api_url to each society option
+        $formattedSocieties = array_map(function($s) use ($baseUrl, $user) {
+            $s['select_api_url'] = "{$baseUrl}/api/v1/auth/select-society?society_id={$s['id']}&user_id={$user['id']}";
+            return $s;
+        }, $societies);
+
         if (session_status() === PHP_SESSION_ACTIVE && class_exists('Session')) {
             Session::set('user_id', $user['id']);
             Session::set('user_name', $user['name']);
@@ -136,6 +146,7 @@ class ApiController extends Controller {
             'status' => 'success',
             'message' => 'Credentials verified successfully.',
             'requires_society_selection' => $requiresSelection,
+            'select_society_api_url' => "{$baseUrl}/api/v1/auth/select-society?society_id={society_id}&user_id={$user['id']}",
             'redirect_url' => $requiresSelection ? '/select-society' : '/dashboard',
             'user' => [
                 'id' => $user['id'],
@@ -144,19 +155,19 @@ class ApiController extends Controller {
                 'is_admin' => false
             ],
             'societies_count' => $societiesCount,
-            'societies' => $societies
+            'societies' => $formattedSocieties
         ]);
     }
 
-    // POST /api/v1/auth/select-society
+    // GET / POST /api/v1/auth/select-society?society_id=X&user_id=Y
     public function selectSocietyApi() {
         $input = $this->getJsonInput();
-        $societyId = intval($input['society_id'] ?? 0);
-        $userId = intval($input['user_id'] ?? (class_exists('Session') ? Session::get('user_id') : 0));
-        $mobile = trim($input['mobile_number'] ?? (class_exists('Session') ? Session::get('user_mobile') : ''));
+        $societyId = intval($input['society_id'] ?? $_GET['society_id'] ?? $_POST['society_id'] ?? 0);
+        $userId = intval($input['user_id'] ?? $_GET['user_id'] ?? $_POST['user_id'] ?? (class_exists('Session') ? Session::get('user_id') : 0));
+        $mobile = trim($input['mobile_number'] ?? $input['phone_number'] ?? $_GET['mobile'] ?? (class_exists('Session') ? Session::get('user_mobile') : ''));
 
         if ($societyId <= 0) {
-            return $this->jsonResponse(['status' => 'error', 'message' => 'Valid society_id is required.'], 400);
+            return $this->jsonResponse(['status' => 'error', 'message' => 'Valid society_id parameter is required in URL or request body.'], 400);
         }
 
         $userModel = new User();
@@ -176,7 +187,7 @@ class ApiController extends Controller {
         }
 
         if (!$selectedSoc) {
-            return $this->jsonResponse(['status' => 'error', 'message' => 'Society not found.'], 404);
+            return $this->jsonResponse(['status' => 'error', 'message' => "Society with ID {$societyId} not found."], 404);
         }
 
         if (session_status() === PHP_SESSION_ACTIVE && class_exists('Session')) {
@@ -187,16 +198,21 @@ class ApiController extends Controller {
             Session::set('user_member_id', $selectedSoc['member_id'] ?? null);
         }
 
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'chocolate-chimpanzee-235196.hostingersite.com';
+        $baseUrl = "{$protocol}://{$host}";
+
         return $this->jsonResponse([
             'status' => 'success',
-            'message' => "Selected society '{$selectedSoc['name']}'",
+            'message' => "Successfully selected society '{$selectedSoc['name']}'",
             'active_society' => [
                 'id' => $selectedSoc['id'],
                 'name' => $selectedSoc['name'],
                 'flat_number' => $selectedSoc['flat_number'] ?? 'N/A',
                 'committee_role' => $selectedSoc['committee_role'] ?? 'Resident',
                 'member_id' => $selectedSoc['member_id'] ?? null
-            ]
+            ],
+            'dashboard_url' => "{$baseUrl}/dashboard"
         ]);
     }
 
