@@ -61,6 +61,18 @@
         .auth-footer a { color: var(--green); text-decoration: none; font-weight: 600; }
         .auth-footer a:hover { text-decoration: underline; }
     </style>
+    <script>
+    // Automatic Synchronization of User Session State to Browser LocalStorage
+    <?php if (Session::has('user_id')): ?>
+        localStorage.setItem('user_id', <?= json_encode(Session::get('user_id')) ?>);
+        localStorage.setItem('user_name', <?= json_encode(Session::get('user_name')) ?>);
+        localStorage.setItem('user_mobile', <?= json_encode(Session::get('user_mobile')) ?>);
+        localStorage.setItem('active_society_id', <?= json_encode(Session::get('active_society_id') ?? 1) ?>);
+        localStorage.setItem('active_society_name', <?= json_encode(Session::get('active_society_name') ?? 'Meridian Heights') ?>);
+        localStorage.setItem('user_role', <?= json_encode(Session::get('user_role') ?? 'Resident') ?>);
+        localStorage.setItem('is_admin', <?= json_encode(Session::get('is_admin') ?? 0) ?>);
+    <?php endif; ?>
+    </script>
 </head>
 <body>
 <?php

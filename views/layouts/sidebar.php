@@ -52,11 +52,24 @@ $activeUserRole = Session::get('user_role') ?? 'Resident';
         <span style="font-size:10px; color:#B9812A; font-weight:600;"><?= htmlspecialchars($activeUserRole) ?></span>
       </div>
     </div>
-    <a href="/logout" style="color:#F4E1D8; text-decoration:none; font-size:11px; background:rgba(177,74,46,0.3); padding:4px 8px; border-radius:4px;">Logout</a>
+    <a href="/logout" onclick="localStorage.clear();" style="color:#F4E1D8; text-decoration:none; font-size:11px; background:rgba(177,74,46,0.3); padding:4px 8px; border-radius:4px;">Logout</a>
   </div>
 </div>
 
 <script>
+// Sync session values to localStorage on page render
+(function syncLocalStorage() {
+    <?php if (Session::has('user_id')): ?>
+        localStorage.setItem('user_id', <?= json_encode(Session::get('user_id')) ?>);
+        localStorage.setItem('user_name', <?= json_encode(Session::get('user_name')) ?>);
+        localStorage.setItem('user_mobile', <?= json_encode(Session::get('user_mobile')) ?>);
+        localStorage.setItem('active_society_id', <?= json_encode(Session::get('active_society_id') ?? 1) ?>);
+        localStorage.setItem('active_society_name', <?= json_encode(Session::get('active_society_name') ?? 'Meridian Heights') ?>);
+        localStorage.setItem('user_role', <?= json_encode(Session::get('user_role') ?? 'Resident') ?>);
+        localStorage.setItem('is_admin', <?= json_encode(Session::get('is_admin') ?? 0) ?>);
+    <?php endif; ?>
+})();
+
 document.addEventListener('DOMContentLoaded', function() {
     const sidebar = document.querySelector('.sidebar');
     if (!sidebar) return;
