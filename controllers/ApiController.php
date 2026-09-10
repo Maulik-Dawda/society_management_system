@@ -94,7 +94,7 @@ class ApiController extends Controller {
     // POST /api/v1/auth/user-login
     public function userLogin() {
         $input = $this->getJsonInput();
-        $mobile = trim($input['identifier'] ?? $input['mobile_number'] ?? $input['mobile'] ?? '');
+        $mobile = trim($input['phone_number'] ?? $input['phone'] ?? $input['mobile_number'] ?? $input['mobile'] ?? $input['identifier'] ?? '');
         $password = trim($input['password'] ?? '');
 
         if (empty($mobile) || empty($password)) {
