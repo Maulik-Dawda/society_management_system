@@ -164,7 +164,7 @@ class ApiController extends Controller {
         $input = $this->getJsonInput();
         $societyId = intval($input['society_id'] ?? $_GET['society_id'] ?? $_POST['society_id'] ?? 0);
         $userId = intval($input['user_id'] ?? $_GET['user_id'] ?? $_POST['user_id'] ?? (class_exists('Session') ? Session::get('user_id') : 0));
-        $mobile = trim($input['mobile_number'] ?? $input['phone_number'] ?? $_GET['mobile'] ?? (class_exists('Session') ? Session::get('user_mobile') : ''));
+        $mobile = trim($input['mobile_number'] ?? $input['phone_number'] ?? $input['phone'] ?? $_GET['mobile'] ?? (class_exists('Session') ? Session::get('user_mobile') : ''));
 
         if ($societyId <= 0) {
             return $this->jsonResponse(['status' => 'error', 'message' => 'Valid society_id parameter is required in URL or request body.'], 400);
@@ -202,6 +202,15 @@ class ApiController extends Controller {
         $host = $_SERVER['HTTP_HOST'] ?? 'chocolate-chimpanzee-235196.hostingersite.com';
         $baseUrl = "{$protocol}://{$host}";
 
+        $role = $selectedSoc['committee_role'] ?? 'Resident';
+        $isChairman = ($role === 'Chairman');
+
+        $actionOption = $isChairman ? "Create Notice" : "Register Complaint";
+        $actionApiUrl = $isChairman ? "{$baseUrl}/api/v1/notices/add" : "{$baseUrl}/api/v1/complaints/add";
+        $requiredFields = $isChairman 
+            ? ["society_id", "phone_number", "title", "content"] 
+            : ["society_id", "phone_number", "title", "description"];
+
         return $this->jsonResponse([
             'status' => 'success',
             'message' => "Successfully selected society '{$selectedSoc['name']}'",
@@ -209,8 +218,17 @@ class ApiController extends Controller {
                 'id' => $selectedSoc['id'],
                 'name' => $selectedSoc['name'],
                 'flat_number' => $selectedSoc['flat_number'] ?? 'N/A',
-                'committee_role' => $selectedSoc['committee_role'] ?? 'Resident',
+                'committee_role' => $role,
                 'member_id' => $selectedSoc['member_id'] ?? null
+            ],
+            'whatsapp_action' => [
+                'role' => $role,
+                'allowed_option' => $actionOption,
+                'api_url' => $actionApiUrl,
+                'required_fields' => $requiredFields,
+                'example_request' => $isChairman 
+                    ? "{$actionApiUrl}?society_id={$selectedSoc['id']}&phone_number={$mobile}&title=AGM+Meeting&content=Annual+general+meeting+on+Sunday"
+                    : "{$actionApiUrl}?society_id={$selectedSoc['id']}&phone_number={$mobile}&title=Water+Leakage&description=Leakage+in+main+pipe"
             ],
             'dashboard_url' => "{$baseUrl}/dashboard"
         ]);
@@ -280,28 +298,73 @@ class ApiController extends Controller {
         return $this->jsonResponse(['status' => 'success', 'society_id' => $societyId, 'data' => $notices]);
     }
 
-    // POST /api/v1/notices/add (CHAIRMAN ONLY Validation!)
+    // GET / POST /api/v1/notices/add & /api/v1/notices/create
     public function addNotice() {
         $input = $this->getJsonInput();
         $societyId = intval($input['society_id'] ?? 1);
-        $userPhone = trim($input['user_phone'] ?? $input['mobile_number'] ?? '');
+        $userPhone = trim($input['phone_number'] ?? $input['phone'] ?? $input['user_phone'] ?? $input['mobile_number'] ?? $input['mobile'] ?? '');
+        $userId = intval($input['user_id'] ?? 0);
         $isAdmin = !empty($input['is_admin']);
 
         // Chairman Validation
         $memberModel = new Member();
-        $member = $memberModel->getMemberByPhoneAndSociety($userPhone, $societyId);
-
-        if (!$isAdmin && (!$member || $member['committee_role'] !== 'Chairman')) {
-            return $this->jsonResponse(['status' => 'error', 'message' => 'Permission Denied: Notices can only be created by the Chairman of this society.'], 403);
+        $member = null;
+        if (!empty($userPhone)) {
+            $member = $memberModel->getMemberByPhoneAndSociety($userPhone, $societyId);
+        } else if ($userId > 0) {
+            $userModel = new User();
+            $u = $userModel->findById($userId);
+            if ($u && !empty($u['mobile_number'])) {
+                $member = $memberModel->getMemberByPhoneAndSociety($u['mobile_number'], $societyId);
+            }
         }
 
-        if (empty($input['title']) || empty($input['content'])) {
-            return $this->jsonResponse(['status' => 'error', 'message' => 'Title and Content are required for posting a notice.'], 400);
+        $userRole = $member['committee_role'] ?? 'Resident';
+
+        if (!$isAdmin && $userRole !== 'Chairman') {
+            return $this->jsonResponse([
+                'status' => 'error',
+                'message' => 'Permission Denied: Only the Chairman of this society can create notices.',
+                'your_role' => $userRole
+            ], 403);
+        }
+
+        $title = trim($input['title'] ?? $input['subject'] ?? $input['notice_title'] ?? '');
+        $content = trim($input['content'] ?? $input['notice_text'] ?? $input['description'] ?? $input['text'] ?? $input['body'] ?? '');
+        $category = trim($input['category'] ?? 'General');
+        $isUrgent = !empty($input['is_urgent']) ? 1 : 0;
+        $noticeDate = trim($input['notice_date'] ?? date('Y-m-d'));
+
+        if (empty($title) || empty($content)) {
+            return $this->jsonResponse([
+                'status' => 'error',
+                'message' => 'Title and Content are required to create a notice.'
+            ], 400);
         }
 
         $noticeModel = new Notice();
-        $noticeModel->create($input);
-        return $this->jsonResponse(['status' => 'success', 'message' => 'Notice published successfully!'], 201);
+        $noticeModel->create([
+            'society_id' => $societyId,
+            'created_by_user_id' => $member['user_id'] ?? $userId ?: null,
+            'notice_date' => $noticeDate,
+            'title' => $title,
+            'category' => $category,
+            'is_urgent' => $isUrgent,
+            'content' => $content
+        ]);
+
+        return $this->jsonResponse([
+            'status' => 'success',
+            'message' => 'Notice created and published successfully to database!',
+            'notice' => [
+                'society_id' => $societyId,
+                'title' => $title,
+                'category' => $category,
+                'is_urgent' => $isUrgent,
+                'notice_date' => $noticeDate,
+                'content' => $content
+            ]
+        ], 201);
     }
 
     // GET /api/v1/complaints?society_id=X
@@ -312,34 +375,64 @@ class ApiController extends Controller {
         return $this->jsonResponse(['status' => 'success', 'society_id' => $societyId, 'data' => $complaints]);
     }
 
-    // POST /api/v1/complaints/add
+    // GET / POST /api/v1/complaints/add & /api/v1/complaints/create
     public function addComplaint() {
         $input = $this->getJsonInput();
         $societyId = intval($input['society_id'] ?? 1);
-        $userPhone = trim($input['user_phone'] ?? $input['mobile_number'] ?? '');
+        $userPhone = trim($input['phone_number'] ?? $input['phone'] ?? $input['user_phone'] ?? $input['mobile_number'] ?? $input['mobile'] ?? '');
+        $userId = intval($input['user_id'] ?? 0);
 
         $memberModel = new Member();
-        $member = $memberModel->getMemberByPhoneAndSociety($userPhone, $societyId);
-
-        if (!$member) {
-            return $this->jsonResponse(['status' => 'error', 'message' => 'Member record not found for this society.'], 404);
+        $member = null;
+        if (!empty($userPhone)) {
+            $member = $memberModel->getMemberByPhoneAndSociety($userPhone, $societyId);
+        } else if ($userId > 0) {
+            $userModel = new User();
+            $u = $userModel->findById($userId);
+            if ($u && !empty($u['mobile_number'])) {
+                $member = $memberModel->getMemberByPhoneAndSociety($u['mobile_number'], $societyId);
+            }
         }
 
-        if (empty($input['title']) || empty($input['description'])) {
-            return $this->jsonResponse(['status' => 'error', 'message' => 'Title and Description are required to lodge a complaint.'], 400);
+        $title = trim($input['title'] ?? $input['subject'] ?? $input['issue'] ?? $input['complaint_title'] ?? '');
+        $description = trim($input['description'] ?? $input['content'] ?? $input['complaint_text'] ?? $input['details'] ?? $input['text'] ?? '');
+        $category = trim($input['category'] ?? 'General');
+
+        if (empty($title) || empty($description)) {
+            return $this->jsonResponse([
+                'status' => 'error',
+                'message' => 'Title and Description are required to lodge a complaint.'
+            ], 400);
         }
+
+        $memberId = $member['id'] ?? 1;
+        $flatNumber = $member['flat_number'] ?? $input['flat_number'] ?? 'N/A';
 
         $complaintModel = new Complaint();
         $complaintId = $complaintModel->create([
             'society_id' => $societyId,
-            'member_id' => $member['id'],
-            'flat_number' => $member['flat_number'],
-            'title' => $input['title'],
-            'category' => $input['category'] ?? 'General',
-            'description' => $input['description']
+            'member_id' => $memberId,
+            'flat_number' => $flatNumber,
+            'title' => $title,
+            'category' => $category,
+            'description' => $description
         ]);
 
-        return $this->jsonResponse(['status' => 'success', 'message' => 'Complaint lodged successfully!', 'complaint_id' => $complaintId], 201);
+        return $this->jsonResponse([
+            'status' => 'success',
+            'message' => 'Complaint lodged successfully and uploaded to database!',
+            'complaint_id' => $complaintId,
+            'complaint' => [
+                'id' => $complaintId,
+                'society_id' => $societyId,
+                'member_id' => $memberId,
+                'flat_number' => $flatNumber,
+                'title' => $title,
+                'category' => $category,
+                'description' => $description,
+                'status' => 'Open'
+            ]
+        ], 201);
     }
 
     // POST /api/v1/complaints/update-status

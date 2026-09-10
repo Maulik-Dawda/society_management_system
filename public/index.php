@@ -23,9 +23,16 @@ try {
     $app->post('/api/v1/members/add', ['ApiController', 'addMember']);
     $app->post('/api/v1/members/update-role', ['ApiController', 'updateMemberRole']);
     $app->get('/api/v1/notices', ['ApiController', 'getNotices']);
+    $app->get('/api/v1/notices/add', ['ApiController', 'addNotice']);
     $app->post('/api/v1/notices/add', ['ApiController', 'addNotice']);
+    $app->get('/api/v1/notices/create', ['ApiController', 'addNotice']);
+    $app->post('/api/v1/notices/create', ['ApiController', 'addNotice']);
+
     $app->get('/api/v1/complaints', ['ApiController', 'getComplaints']);
+    $app->get('/api/v1/complaints/add', ['ApiController', 'addComplaint']);
     $app->post('/api/v1/complaints/add', ['ApiController', 'addComplaint']);
+    $app->get('/api/v1/complaints/create', ['ApiController', 'addComplaint']);
+    $app->post('/api/v1/complaints/create', ['ApiController', 'addComplaint']);
     $app->post('/api/v1/complaints/update-status', ['ApiController', 'updateComplaintStatus']);
 
     // Define Web Auth Routes
