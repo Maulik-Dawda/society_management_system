@@ -22,8 +22,19 @@ class DashboardController extends Controller {
 
         $userId = Session::get('user_id');
         $user = $this->userModel->findById($userId);
+        $isAdmin = !empty(Session::get('is_admin'));
 
-        // Enforce society registration before dashboard access
+        if ($isAdmin) {
+            $allSocieties = $this->societyModel->getAll();
+            $this->view('dashboard/index', [
+                'user' => $user,
+                'isAdmin' => true,
+                'allSocieties' => $allSocieties
+            ]);
+            return;
+        }
+
+        // Enforce society registration for non-admin users
         $society = $this->societyModel->findByUserId($userId);
         if (!$society || empty($society['pan_number']) || empty($society['registered_address'])) {
             Session::setFlash('info', "Please complete your society registration first before accessing dashboard.");
@@ -32,6 +43,7 @@ class DashboardController extends Controller {
 
         $this->view('dashboard/index', [
             'user' => $user,
+            'isAdmin' => false,
             'society' => $society
         ]);
     }

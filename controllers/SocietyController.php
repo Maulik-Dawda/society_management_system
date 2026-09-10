@@ -59,6 +59,19 @@ class SocietyController extends Controller {
         $this->redirect('/registration');
     }
 
+    public function selectActiveSociety() {
+        $societyId = intval($_GET['id'] ?? 0);
+        if ($societyId > 0) {
+            $society = $this->societyModel->findById($societyId);
+            if ($society) {
+                Session::set('active_society_id', $society['id']);
+                Session::set('active_society_name', $society['name']);
+                Session::setFlash('success', "Active society switched to '{$society['name']}'. Showing member directory.");
+            }
+        }
+        $this->redirect('/members');
+    }
+
     public function members() {
         $societyId = $this->getActiveSocietyId();
         $members = $this->memberModel->getAll($societyId);
@@ -68,15 +81,38 @@ class SocietyController extends Controller {
     public function addMember() {
         $flatNumber = trim($_POST['flat_number'] ?? '');
         $ownerName = trim($_POST['owner_name'] ?? '');
+        $ownerPhone = preg_replace('/[^0-9]/', '', $_POST['owner_phone'] ?? '');
+        $ownerEmail = trim($_POST['owner_email'] ?? '');
+        $password = trim($_POST['password'] ?? '');
 
-        if (empty($flatNumber) || empty($ownerName)) {
-            Session::setFlash('error', "Flat Number and Owner Name are required.");
+        if (empty($flatNumber) || empty($ownerName) || empty($ownerPhone)) {
+            Session::setFlash('error', "Flat Number, Owner Name, and Owner Mobile Number are required.");
             $this->redirect('/members');
         }
 
+        require_once __DIR__ . '/../models/User.php';
+        $userModel = new User();
+        $existingUser = $userModel->findByMobile($ownerPhone);
+        $userId = null;
+
+        if ($existingUser) {
+            // Existing user in database -> link user ID without modifying password!
+            $userId = $existingUser['id'];
+            Session::setFlash('info', "Mobile {$ownerPhone} is already registered as '{$existingUser['name']}'. Linked existing user account to flat {$flatNumber} without modifying password.");
+        } else {
+            // New user -> create user account with password
+            if (empty($password)) {
+                $password = 'User@1234';
+            }
+            $userId = $userModel->create($ownerName, $ownerPhone, $ownerEmail, $password, 0);
+            Session::setFlash('success', "New user account and member record created for {$ownerName} ({$flatNumber})!");
+        }
+
         $_POST['society_id'] = $this->getActiveSocietyId();
+        $_POST['user_id'] = $userId;
+        $_POST['owner_phone'] = $ownerPhone;
+
         $this->memberModel->create($_POST);
-        Session::setFlash('success', "Member {$ownerName} ({$flatNumber}) added successfully!");
         $this->redirect('/members');
     }
 

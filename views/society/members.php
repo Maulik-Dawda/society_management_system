@@ -107,13 +107,13 @@
       </div>
 
       <div class="ledger">
-        <div class="lrow head" style="grid-template-columns:90px 1.2fr 1.2fr 110px 1fr;">
-          <div>Flat</div><div>Owner / Resident</div><div>Contact</div><div style="text-align:center">Occupancy</div><div>Details</div>
+        <div class="lrow head" style="grid-template-columns:90px 1.2fr 1.2fr 110px 180px;">
+          <div>Flat</div><div>Owner / Resident</div><div>Contact</div><div style="text-align:center">Occupancy</div><div style="text-align:center">Actions</div>
         </div>
         
         <?php if (!empty($filteredMembers)): ?>
           <?php foreach ($filteredMembers as $m): ?>
-            <div class="lrow" style="grid-template-columns:90px 1.2fr 1.2fr 110px 1fr;">
+            <div class="lrow" style="grid-template-columns:90px 1.2fr 1.2fr 110px 180px;">
               <div class="flat"><?= htmlspecialchars($m['flat_number']) ?></div>
               <div class="owner">
                 <?= htmlspecialchars($m['owner_name']) ?>
@@ -126,22 +126,17 @@
               <div style="display:flex; justify-content:center">
                 <span class="badge <?= $m['is_rented'] ? 'rented' : 'owner-occ' ?>"><?= $m['is_rented'] ? 'On Rent' : 'Owner-occ.' ?></span>
               </div>
-              <div class="cars">ID Proof: <span class="n"><?= htmlspecialchars($m['id_proof'] ?: 'Verified') ?></span></div>
+              <div style="display:flex; gap:6px; justify-content:center;">
+                <button class="rowbtn" onclick='viewMemberProfile(<?= json_encode($m) ?>)'>👤 Profile</button>
+                <button class="rowbtn" onclick="openAssignModal(<?= $m['id'] ?>, '<?= htmlspecialchars($m['committee_role'] ?? 'Resident') ?>')">★ Role</button>
+              </div>
             </div>
           <?php endforeach; ?>
         <?php else: ?>
-          <!-- Demo initial rows if DB is fresh -->
-          <div class="lrow" style="grid-template-columns:90px 1.2fr 1.2fr 110px 1fr;">
+          <div class="lrow" style="grid-template-columns:90px 1.2fr 1.2fr 110px 180px;">
             <div class="flat">A-102</div><div class="owner">Rekha Iyer<span class="sub">Owner · 980 sq.ft</span></div><div class="contact">+91 98200 11234<br><small>rekha@gmail.com</small></div>
-            <div style="display:flex; justify-content:center"><span class="badge owner-occ">Owner-occ.</span></div><div class="cars">ID: <span class="n">Aadhaar Verified</span></div>
-          </div>
-          <div class="lrow" style="grid-template-columns:90px 1.2fr 1.2fr 110px 1fr;">
-            <div class="flat">B-304</div><div class="owner">Vikram Shah<span class="sub">Tenant · owner: Anil Mehta</span></div><div class="contact">+91 90210 88345<br><small>vikram@gmail.com</small></div>
-            <div style="display:flex; justify-content:center"><span class="badge rented">On Rent</span></div><div class="cars">ID: <span class="n">Passport Verified</span></div>
-          </div>
-          <div class="lrow" style="grid-template-columns:90px 1.2fr 1.2fr 110px 1fr;">
-            <div class="flat">C-201</div><div class="owner">Farhan Sheikh<span class="sub">Owner · 1050 sq.ft</span></div><div class="contact">+91 99870 45671<br><small>farhan@gmail.com</small></div>
-            <div style="display:flex; justify-content:center"><span class="badge owner-occ">Owner-occ.</span></div><div class="cars">ID: <span class="n">Aadhaar Verified</span></div>
+            <div style="display:flex; justify-content:center"><span class="badge owner-occ">Owner-occ.</span></div>
+            <div style="display:flex; gap:6px; justify-content:center;"><button class="rowbtn" onclick="document.getElementById('memberform').classList.add('open')">+ Add Member</button></div>
           </div>
         <?php endif; ?>
       </div>

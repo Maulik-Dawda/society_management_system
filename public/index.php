@@ -11,6 +11,7 @@ try {
 
     // REST API Routes (for WhatsApp Chatbot & External Integrations)
     $app->post('/api/v1/auth/login', ['ApiController', 'login']);
+    $app->get('/api/v1/users/check-mobile', ['ApiController', 'checkMobile']);
     $app->get('/api/v1/societies', ['ApiController', 'getSocieties']);
     $app->post('/api/v1/societies/register', ['ApiController', 'registerSociety']);
     $app->get('/api/v1/members', ['ApiController', 'getMembers']);
@@ -28,6 +29,7 @@ try {
 
     $app->get('/select-society', ['AuthController', 'selectSocietyPage']);
     $app->post('/select-society', ['AuthController', 'chooseSociety']);
+    $app->get('/select-active-society', ['SocietyController', 'selectActiveSociety']);
 
     $app->get('/register', ['AuthController', 'register']);
     $app->post('/register', ['AuthController', 'processRegister']);

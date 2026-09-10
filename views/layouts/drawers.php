@@ -66,18 +66,43 @@
   <form class="drawer" action="/members/add" method="POST">
     <button type="button" class="close-btn" onclick="document.getElementById('memberform').classList.remove('open')">✕</button>
     <h2>Add member</h2>
-    <div class="hint">Flat, ownership, and vehicle details in one record.</div>
+    <div class="hint">Flat, ownership, and user login details in one record.</div>
+
     <div class="sectionlbl">Flat & owner details</div>
     <div class="row2">
       <div class="field"><label>Flat number *</label><input type="text" name="flat_number" placeholder="e.g. A-102" required></div>
       <div class="field"><label>Area (sq.ft)</label><input type="number" name="area_sqft" placeholder="980"></div>
     </div>
-    <div class="field"><label>Owner name *</label><input type="text" name="owner_name" placeholder="Full name" required></div>
+    <div class="field"><label>Owner name *</label><input type="text" id="addOwnerName" name="owner_name" placeholder="Full name" required></div>
     <div class="row2">
-      <div class="field"><label>Owner phone</label><input type="text" name="owner_phone" placeholder="+91"></div>
-      <div class="field"><label>Owner email</label><input type="email" name="owner_email" placeholder="name@email.com"></div>
+      <div class="field">
+        <label>Owner phone * (Mobile Login)</label>
+        <input type="text" id="addOwnerPhone" name="owner_phone" placeholder="10-digit Mobile" required oninput="checkExistingMobile(this.value)">
+      </div>
+      <div class="field"><label>Owner email</label><input type="email" id="addOwnerEmail" name="owner_email" placeholder="name@email.com"></div>
     </div>
-    <div class="sectionlbl">Occupancy</div>
+
+    <!-- Live Mobile Check Info Banner -->
+    <div id="mobileCheckStatus" style="display:none; padding:10px 14px; border-radius:8px; font-size:12.5px; margin-bottom:14px; line-height:1.4;"></div>
+
+    <!-- Password Field (Disabled if Mobile Exists in DB) -->
+    <div class="field" id="passwordFieldGroup">
+      <label>User Login Password * <small style="color:var(--ink-soft); font-weight:normal;">(Set password for new user account)</small></label>
+      <input type="password" id="addPassword" name="password" placeholder="Set user login password">
+    </div>
+
+    <div class="sectionlbl">Occupancy & Committee Role</div>
+    <div class="field">
+      <label>Initial Committee Role</label>
+      <select name="committee_role">
+        <option value="Resident">🏠 Resident</option>
+        <option value="Chairman">★ Chairman</option>
+        <option value="Secretary">📜 Secretary</option>
+        <option value="Treasurer">💰 Treasurer</option>
+        <option value="Committee Member">🛡️ Committee Member</option>
+      </select>
+    </div>
+
     <label class="rentcheck">
       <input type="checkbox" id="rentCheck" name="is_rented" value="1" onchange="toggleRent()">
       <div class="txt">This flat is on rent<span class="sub">Check if a tenant occupies this flat instead of owner</span></div>
@@ -289,7 +314,34 @@
   </div>
 </div>
 
+<!-- View User Profile Modal -->
+<div class="modal-overlay" id="viewProfileModal">
+  <div class="receipt" style="width:480px; padding:28px;">
+    <button type="button" class="rclose" onclick="document.getElementById('viewProfileModal').classList.remove('open')">✕</button>
+    <div style="font-family:'Fraunces',serif; font-size:22px; font-weight:600; color:var(--green-dark); margin-bottom:4px;" id="vpName">Member Profile</div>
+    <div style="font-size:12.5px; color:var(--ink-soft); margin-bottom:18px; border-bottom:1px solid var(--line); padding-bottom:12px;" id="vpSubtitle">Member Roster Information</div>
+    
+    <div class="receipt-body">
+      <div class="rline"><span>Flat Number:</span><b id="vpFlat">A-101</b></div>
+      <div class="rline"><span>Mobile Number:</span><b id="vpPhone" style="font-family:'IBM Plex Mono',monospace;">+91 98200 11234</b></div>
+      <div class="rline"><span>Email Address:</span><b id="vpEmail">user@society.com</b></div>
+      <div class="rline"><span>Occupancy Status:</span><b id="vpOccupancy">Owner Occupied</b></div>
+      <div class="rline"><span>Flat Area:</span><b id="vpArea">980 sq.ft</b></div>
+      <div class="rline"><span>Committee Role:</span><b id="vpRole" style="color:var(--gold);">Resident</b></div>
+      <div class="rline"><span>ID Proof:</span><b id="vpIdProof">Aadhaar Verified</b></div>
+    </div>
+    
+    <div style="margin-top:20px; display:flex; gap:10px;">
+      <button type="button" class="save-btn" style="margin-top:0; background:var(--gold);" onclick="document.getElementById('viewProfileModal').classList.remove('open'); openAssignModal(currentProfileMemberId, currentProfileRole);">★ Change Committee Role</button>
+      <button type="button" class="save-btn" style="margin-top:0; background:var(--paper); color:var(--ink); border:1px solid var(--line);" onclick="document.getElementById('viewProfileModal').classList.remove('open')">Close</button>
+    </div>
+  </div>
+</div>
+
 <script>
+let currentProfileMemberId = 0;
+let currentProfileRole = 'Resident';
+
 function toggleRent() {
     const rentCheck = document.getElementById('rentCheck');
     const tenantBox = document.getElementById('tenantBox');
@@ -303,6 +355,72 @@ function openReceipt(receiptNo, flat, amount) {
     if (flat) document.getElementById('recFlat').textContent = flat;
     if (amount) document.getElementById('recAmt').textContent = '₹ ' + amount;
     const modal = document.getElementById('receiptModal');
+    if (modal) modal.classList.add('open');
+}
+
+function checkExistingMobile(val) {
+    const clean = val.replace(/[^0-9]/g, '');
+    const statusDiv = document.getElementById('mobileCheckStatus');
+    const pwdGroup = document.getElementById('passwordFieldGroup');
+    const pwdInput = document.getElementById('addPassword');
+    const ownerNameInput = document.getElementById('addOwnerName');
+    const ownerEmailInput = document.getElementById('addOwnerEmail');
+
+    if (clean.length < 10) {
+        if (statusDiv) statusDiv.style.display = 'none';
+        if (pwdGroup) pwdGroup.style.display = 'block';
+        if (pwdInput) { pwdInput.disabled = false; pwdInput.required = true; }
+        return;
+    }
+
+    fetch('/api/v1/users/check-mobile?mobile=' + encodeURIComponent(clean))
+        .then(res => res.json())
+        .then(data => {
+            if (data.exists) {
+                if (statusDiv) {
+                    statusDiv.style.display = 'block';
+                    statusDiv.style.background = 'var(--gold-tint)';
+                    statusDiv.style.color = 'var(--gold)';
+                    statusDiv.style.border = '1px solid rgba(185,129,42,0.3)';
+                    statusDiv.innerHTML = '<strong>✓ Registered User Found:</strong> ' + (data.name || 'User') + '<br>Mobile already in database. Account will be linked without changing password.';
+                }
+                if (pwdGroup) pwdGroup.style.display = 'none';
+                if (pwdInput) { pwdInput.disabled = true; pwdInput.required = false; pwdInput.value = ''; }
+                if (ownerNameInput && !ownerNameInput.value) ownerNameInput.value = data.name || '';
+                if (ownerEmailInput && !ownerEmailInput.value) ownerEmailInput.value = data.email || '';
+            } else {
+                if (statusDiv) {
+                    statusDiv.style.display = 'block';
+                    statusDiv.style.background = 'var(--green-tint)';
+                    statusDiv.style.color = 'var(--green-dark)';
+                    statusDiv.style.border = '1px solid rgba(31,92,74,0.3)';
+                    statusDiv.innerHTML = '<strong>🆕 New Mobile Number:</strong> Please set a login password for this new user account.';
+                }
+                if (pwdGroup) pwdGroup.style.display = 'block';
+                if (pwdInput) { pwdInput.disabled = false; pwdInput.required = true; }
+            }
+        })
+        .catch(err => {
+            if (statusDiv) statusDiv.style.display = 'none';
+        });
+}
+
+function viewMemberProfile(m) {
+    if (!m) return;
+    currentProfileMemberId = m.id;
+    currentProfileRole = m.committee_role || 'Resident';
+
+    document.getElementById('vpName').textContent = m.owner_name || 'Member Profile';
+    document.getElementById('vpSubtitle').textContent = 'Flat ' + (m.flat_number || '') + ' · ' + (m.committee_role || 'Resident');
+    document.getElementById('vpFlat').textContent = m.flat_number || 'N/A';
+    document.getElementById('vpPhone').textContent = m.owner_phone || 'N/A';
+    document.getElementById('vpEmail').textContent = m.owner_email || 'N/A';
+    document.getElementById('vpOccupancy').textContent = m.is_rented == 1 ? ('On Rent (Tenant: ' + (m.tenant_name || 'N/A') + ')') : 'Owner Occupied';
+    document.getElementById('vpArea').textContent = (m.area_sqft || '0') + ' sq.ft';
+    document.getElementById('vpRole').textContent = m.committee_role || 'Resident';
+    document.getElementById('vpIdProof').textContent = m.id_proof || 'Verified';
+
+    const modal = document.getElementById('viewProfileModal');
     if (modal) modal.classList.add('open');
 }
 </script>

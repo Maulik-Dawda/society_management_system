@@ -26,6 +26,35 @@ class ApiController extends Controller {
         return is_array($json) ? array_merge($_POST, $json) : $_POST;
     }
 
+    // GET /api/v1/users/check-mobile?mobile=XXXXXXXXXX
+    public function checkMobile() {
+        $mobile = trim($_GET['mobile'] ?? $_POST['mobile'] ?? '');
+        $cleanMobile = preg_replace('/[^0-9]/', '', $mobile);
+
+        if (empty($cleanMobile) || strlen($cleanMobile) < 10) {
+            return $this->jsonResponse(['exists' => false, 'message' => 'Invalid mobile number.'], 400);
+        }
+
+        $userModel = new User();
+        $user = $userModel->findByMobile($cleanMobile);
+
+        if ($user) {
+            return $this->jsonResponse([
+                'exists' => true,
+                'user_id' => $user['id'],
+                'name' => $user['name'],
+                'email' => $user['email'] ?? '',
+                'mobile_number' => $user['mobile_number'],
+                'message' => "Mobile number {$cleanMobile} is already registered as '{$user['name']}'. Account will be linked without changing password."
+            ]);
+        }
+
+        return $this->jsonResponse([
+            'exists' => false,
+            'message' => 'New mobile number. Password required for new account setup.'
+        ]);
+    }
+
     // POST /api/v1/auth/login
     public function login() {
         $input = $this->getJsonInput();
