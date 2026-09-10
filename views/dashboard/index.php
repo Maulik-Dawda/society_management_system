@@ -88,83 +88,59 @@
             <?php endif; ?>
 
             <?php if (!empty($isAdmin)): ?>
-                <!-- ================= SYSTEM ADMIN MULTI-SOCIETY DASHBOARD ================= -->
+                <!-- ================= SYSTEM ADMIN - LIST OF ALL SOCIETIES ================= -->
                 <div class="topbar">
                     <div>
-                        <h1>System Admin Dashboard</h1>
+                        <h1>Registered Societies List</h1>
                         <div style="font-size:13.5px; color:var(--ink-soft); margin-top:4px;">
-                            Multi-Society Management — Logged in as <b><?= htmlspecialchars($user['name'] ?? 'System Admin') ?></b>
+                            System Admin Management — <b><?= count($allSocieties ?? []) ?></b> registered societies
                         </div>
                     </div>
                     <div>
-                        <a href="/registration" style="display:inline-block; padding:10px 18px; border-radius:8px; background:var(--gold); color:#fff; font-weight:600; text-decoration:none; font-size:13.5px;">＋ Register New Society</a>
+                        <a href="/registration" style="display:inline-block; padding:10px 20px; border-radius:8px; background:var(--gold); color:#fff; font-weight:600; text-decoration:none; font-size:13.5px;">＋ Register New Society</a>
                     </div>
                 </div>
 
-                <!-- Admin Quick Stats -->
-                <div class="stats">
-                    <div class="stat">
-                        <div class="label">Registered Societies</div>
-                        <div class="val"><?= count($allSocieties ?? []) ?></div>
-                        <div class="sub">Active housing societies</div>
+                <!-- Direct Roster List of All Societies (No Summary Cards) -->
+                <div class="ledger" style="margin-bottom:32px;">
+                    <div class="lrow head" style="grid-template-columns: 1.5fr 1.2fr 1.8fr 100px 100px 180px;">
+                        <div>Society Name</div>
+                        <div>Reg. Number</div>
+                        <div>Registered Address</div>
+                        <div style="text-align:center">Wings/Flats</div>
+                        <div style="text-align:center">Members</div>
+                        <div style="text-align:center">Action</div>
                     </div>
-                    <div class="stat">
-                        <div class="label">Total System Flats</div>
-                        <div class="val"><?= array_sum(array_column($allSocieties ?? [], 'total_flats')) ?: 84 ?></div>
-                        <div class="sub">Across all societies</div>
-                    </div>
-                    <div class="stat">
-                        <div class="label">Total Members</div>
-                        <div class="val"><?= array_sum(array_column($allSocieties ?? [], 'total_members')) ?: 84 ?></div>
-                        <div class="sub">On system record</div>
-                    </div>
-                    <div class="stat">
-                        <div class="label">System Balance</div>
-                        <div class="val">₹ <?= number_format(array_sum(array_column($allSocieties ?? [], 'bank_balance')), 2) ?></div>
-                        <div class="sub">Combined bank balance</div>
-                    </div>
-                </div>
 
-                <!-- All Societies Portfolio Grid -->
-                <h3 style="font-family:'Fraunces',serif; font-size:22px; margin-bottom:16px; color:var(--green-dark);">All Registered Societies</h3>
-                <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:20px; margin-bottom:32px;">
                     <?php if (!empty($allSocieties)): ?>
                         <?php foreach ($allSocieties as $soc): ?>
-                            <div style="background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius); padding:24px; display:flex; flex-direction:column; justify-content:space-between;">
-                                <div>
-                                    <div style="font-family:'Fraunces',serif; font-size:20px; font-weight:600; color:var(--green-dark); margin-bottom:4px;">
-                                        <?= htmlspecialchars($soc['name']) ?>
-                                    </div>
-                                    <div style="font-size:12.5px; color:var(--ink-soft); margin-bottom:12px; line-height:1.4;">
-                                        Reg No: <b><?= htmlspecialchars($soc['registration_number'] ?: 'GUJ/AHM/HSG/2014/1123') ?></b><br>
-                                        📍 <?= htmlspecialchars($soc['registered_address'] ?: 'Registered Address') ?>
-                                    </div>
-                                    
-                                    <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
-                                        <span class="status-badge"><?= htmlspecialchars($soc['total_wings'] ?? 4) ?> Wings</span>
-                                        <span class="status-badge" style="background:var(--gold-tint); color:var(--gold);"><?= htmlspecialchars($soc['total_flats'] ?? 84) ?> Flats</span>
-                                        <span class="status-badge" style="background:#EBF3F5; color:#1C6B72;"><?= htmlspecialchars($soc['total_members'] ?? 84) ?> Members</span>
-                                    </div>
-
-                                    <div style="font-size:13px; color:var(--ink-soft); border-top:1px dashed var(--line); padding-top:12px; margin-bottom:16px;">
-                                        Bank Balance: <strong style="font-family:'IBM Plex Mono',monospace; color:var(--green-dark);">₹ <?= number_format($soc['bank_balance'] ?? 0, 2) ?></strong><br>
-                                        PAN: <span style="font-family:'IBM Plex Mono',monospace;"><?= htmlspecialchars($soc['pan_number'] ?: 'N/A') ?></span>
-                                    </div>
+                            <div class="lrow" style="grid-template-columns: 1.5fr 1.2fr 1.8fr 100px 100px 180px; padding:16px 20px;">
+                                <div style="font-family:'Fraunces',serif; font-size:16px; font-weight:600; color:var(--green-dark);">
+                                    <?= htmlspecialchars($soc['name']) ?>
+                                    <span style="display:block; font-family:'Inter',sans-serif; font-size:11.5px; color:var(--ink-soft); font-weight:normal;">PAN: <?= htmlspecialchars($soc['pan_number'] ?: 'N/A') ?></span>
                                 </div>
-
-                                <div style="display:flex; gap:10px;">
-                                    <a href="/select-active-society?id=<?= $soc['id'] ?>" style="flex:1; text-align:center; padding:11px; border-radius:8px; background:var(--green); color:#fff; font-weight:600; text-decoration:none; font-size:13px;">View & Manage Members →</a>
+                                <div style="font-size:12.5px; font-family:'IBM Plex Mono',monospace; color:var(--ink-soft);">
+                                    <?= htmlspecialchars($soc['registration_number'] ?: 'GUJ/AHM/HSG/2014/1123') ?>
+                                </div>
+                                <div style="font-size:12.5px; color:var(--ink-soft); line-height:1.4;">
+                                    <?= htmlspecialchars($soc['registered_address'] ?: 'Registered Address') ?>
+                                </div>
+                                <div style="text-align:center;">
+                                    <span class="status-badge" style="background:var(--green-tint); color:var(--green-dark);"><?= htmlspecialchars($soc['total_wings'] ?? 4) ?>W / <?= htmlspecialchars($soc['total_flats'] ?? 84) ?>F</span>
+                                </div>
+                                <div style="text-align:center;">
+                                    <span class="status-badge" style="background:var(--gold-tint); color:var(--gold);"><?= htmlspecialchars($soc['total_members'] ?? 84) ?></span>
+                                </div>
+                                <div style="text-align:center;">
+                                    <a href="/select-active-society?id=<?= $soc['id'] ?>" class="btn" style="padding:8px 14px; font-size:12.5px; text-decoration:none; display:inline-block; width:100%;">View Members →</a>
                                 </div>
                             </div>
                         <?php endforeach; ?>
+                    <?php else: ?>
+                        <div style="padding:40px; text-align:center; color:var(--ink-soft);">
+                            No societies registered yet. <a href="/registration" style="color:var(--green-dark); font-weight:600;">Click here to register your first society</a>.
+                        </div>
                     <?php endif; ?>
-
-                    <!-- Action Card to Create New Society -->
-                    <a href="/registration" style="border:2px dashed var(--line); border-radius:var(--radius); padding:24px; text-decoration:none; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; min-height:220px; transition:all 0.15s ease;">
-                        <div style="width:48px; height:48px; border-radius:50%; background:var(--gold-tint); color:var(--gold); display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:bold; margin-bottom:12px;">＋</div>
-                        <div style="font-family:'Fraunces',serif; font-size:18px; font-weight:600; color:var(--ink); margin-bottom:4px;">Register New Society</div>
-                        <div style="font-size:12.5px; color:var(--ink-soft);">Add another housing society to your admin portfolio</div>
-                    </a>
                 </div>
 
             <?php else: ?>
