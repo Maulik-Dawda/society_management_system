@@ -9,7 +9,12 @@ $isAdmin = !empty(Session::get('is_admin'));
 <!-- ===== Sidebar Component ===== -->
 <div class="sidebar">
   <div class="brand"><?= htmlspecialchars($isAdmin ? 'System Admin Portal' : $activeSocietyName) ?></div>
-  <div class="subbrand"><?= $isAdmin ? 'Multi-Society Management' : 'Cooperative Housing Society' ?></div>
+  <div class="subbrand" style="display:flex; justify-content:space-between; align-items:center;">
+    <span><?= $isAdmin ? 'Multi-Society Management' : 'Cooperative Housing' ?></span>
+    <?php if (Session::has('user_societies') && count(Session::get('user_societies')) > 1): ?>
+      <a href="/select-society" style="font-size:10.5px; color:#9FB3A8; text-decoration:underline;">🔁 Switch</a>
+    <?php endif; ?>
+  </div>
 
   <div class="langswitch">
     <div class="active">English</div>
