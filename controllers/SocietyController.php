@@ -121,9 +121,8 @@ class SocietyController extends Controller {
     public function addNotice() {
         // Enforce CHAIRMAN ONLY rule
         $userRole = Session::get('user_role') ?? 'Resident';
-        $isAdmin = Session::get('is_admin') ?? 0;
 
-        if ($userRole !== 'Chairman' && !$isAdmin) {
+        if ($userRole !== 'Chairman') {
             Session::setFlash('error', "Permission Denied: Notices can only be created by the Chairman of the society.");
             $this->redirect('/notices');
         }

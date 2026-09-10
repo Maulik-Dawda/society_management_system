@@ -4,11 +4,12 @@ $baseUrl = ($scriptName === '/' || $scriptName === '\\') ? '' : rtrim(str_replac
 $currentUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $activeSocietyName = Session::get('active_society_name') ?? 'Meridian Heights';
 $activeUserRole = Session::get('user_role') ?? 'Resident';
+$isAdmin = !empty(Session::get('is_admin'));
 ?>
 <!-- ===== Sidebar Component ===== -->
 <div class="sidebar">
-  <div class="brand"><?= htmlspecialchars($activeSocietyName) ?></div>
-  <div class="subbrand">Cooperative Housing Society</div>
+  <div class="brand"><?= htmlspecialchars($isAdmin ? 'System Admin Portal' : $activeSocietyName) ?></div>
+  <div class="subbrand"><?= $isAdmin ? 'Multi-Society Management' : 'Cooperative Housing Society' ?></div>
 
   <div class="langswitch">
     <div class="active">English</div>
@@ -20,13 +21,14 @@ $activeUserRole = Session::get('user_role') ?? 'Resident';
     <a href="/dashboard" data-page="dashboard" class="navitem <?= (isset($activePage) && $activePage === 'dashboard') ? 'active' : '' ?>"><span class="ic">◆</span><span>Dashboard</span></a>
   </div>
 
-  <?php if (!empty(Session::get('is_admin'))): ?>
+  <?php if ($isAdmin): ?>
   <div class="navgroup">
-    <div class="navlabel">Admin Setup</div>
-    <a href="/registration" data-page="registration" class="navitem <?= (isset($activePage) && $activePage === 'registration') ? 'active' : '' ?>"><span class="ic">⚙</span><span>Society Registration</span></a>
+    <div class="navlabel">Admin Rights & Management</div>
+    <a href="/registration" data-page="registration" class="navitem <?= (isset($activePage) && $activePage === 'registration') ? 'active' : '' ?>"><span class="ic">⚙</span><span>Create / Edit Society</span></a>
+    <a href="/members" data-page="members" class="navitem <?= (isset($activePage) && $activePage === 'members') ? 'active' : '' ?>"><span class="ic">☰</span><span>Create & Add Members</span></a>
+    <a href="/committee" data-page="committee" class="navitem <?= (isset($activePage) && $activePage === 'committee') ? 'active' : '' ?>"><span class="ic">★</span><span>Make Committee Members</span></a>
   </div>
-  <?php endif; ?>
-
+  <?php else: ?>
   <div class="navgroup">
     <div class="navlabel">Society</div>
     <a href="/members" data-page="members" class="navitem <?= (isset($activePage) && $activePage === 'members') ? 'active' : '' ?>"><span class="ic">☰</span><span>Members</span></a>
@@ -43,6 +45,7 @@ $activeUserRole = Session::get('user_role') ?? 'Resident';
     <a href="/expenses" data-page="expenses" class="navitem <?= (isset($activePage) && $activePage === 'expenses') ? 'active' : '' ?>"><span class="ic">–</span><span>Expenses</span></a>
     <a href="/reports" data-page="reports" class="navitem <?= (isset($activePage) && $activePage === 'reports') ? 'active' : '' ?>"><span class="ic">▤</span><span>Reports & Tally</span></a>
   </div>
+  <?php endif; ?>
 
   <div class="sidebar-foot">
     <div style="display:flex; align-items:center; gap:8px;">

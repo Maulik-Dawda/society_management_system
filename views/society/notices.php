@@ -58,7 +58,7 @@
       <?php
       $flashSuccess = Session::getFlash('success');
       $flashError = Session::getFlash('error');
-      $isChairmanOrAdmin = (isset($userRole) && $userRole === 'Chairman') || !empty($isAdmin);
+      $isChairman = (isset($userRole) && $userRole === 'Chairman');
       ?>
       <?php if ($flashSuccess): ?>
         <div class="alert alert-success"><?= htmlspecialchars($flashSuccess) ?></div>
@@ -75,7 +75,7 @@
           <div class="chip">Urgent</div>
         </div>
         
-        <?php if ($isChairmanOrAdmin): ?>
+        <?php if ($isChairman): ?>
           <button class="btn" onclick="document.getElementById('postNoticeModal').classList.add('open')">＋ Post Notice (Chairman)</button>
         <?php else: ?>
           <span style="font-size:12.5px; color:var(--ink-soft); font-style:italic;">★ Notices can only be issued by the Society Chairman</span>
