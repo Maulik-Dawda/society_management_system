@@ -97,7 +97,7 @@
                         </div>
                     </div>
                     <div>
-                        <a href="/registration" style="display:inline-block; padding:10px 20px; border-radius:8px; background:var(--gold); color:#fff; font-weight:600; text-decoration:none; font-size:13.5px;">＋ Register New Society</a>
+                        <a href="/registration?new=1" style="display:inline-block; padding:10px 20px; border-radius:8px; background:var(--gold); color:#fff; font-weight:600; text-decoration:none; font-size:13.5px;">＋ Register New Society</a>
                     </div>
                 </div>
 

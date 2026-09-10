@@ -24,7 +24,7 @@ $isAdmin = !empty(Session::get('is_admin'));
   <?php if ($isAdmin): ?>
   <div class="navgroup">
     <div class="navlabel">Admin Rights & Management</div>
-    <a href="/registration" data-page="registration" class="navitem <?= (isset($activePage) && $activePage === 'registration') ? 'active' : '' ?>"><span class="ic">⚙</span><span>Create / Edit Society</span></a>
+    <a href="/registration?new=1" data-page="registration" class="navitem <?= (isset($activePage) && $activePage === 'registration') ? 'active' : '' ?>"><span class="ic">⚙</span><span>Register New Society</span></a>
     <a href="/members" data-page="members" class="navitem <?= (isset($activePage) && $activePage === 'members') ? 'active' : '' ?>"><span class="ic">☰</span><span>Create & Add Members</span></a>
     <a href="/committee" data-page="committee" class="navitem <?= (isset($activePage) && $activePage === 'committee') ? 'active' : '' ?>"><span class="ic">★</span><span>Make Committee Members</span></a>
   </div>

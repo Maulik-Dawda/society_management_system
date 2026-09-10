@@ -30,10 +30,16 @@ class SocietyController extends Controller {
 
     public function registration() {
         $userId = Session::get('user_id');
-        $society = $this->societyModel->findById($this->getActiveSocietyId());
+        $isNew = isset($_GET['new']) || isset($_GET['action']);
+        
+        $society = null;
+        if (!$isNew) {
+            $society = $this->societyModel->findById($this->getActiveSocietyId());
+        }
 
         $this->view('society/registration', [
-            'society' => $society
+            'society' => $society,
+            'isNew' => $isNew
         ]);
     }
 
@@ -45,18 +51,19 @@ class SocietyController extends Controller {
 
         if (empty($societyName) || empty($registeredAddress) || empty($panNumber)) {
             Session::setFlash('error', "Society Name, Address, and PAN Number are required.");
-            $this->redirect('/registration');
+            $this->redirect('/registration?new=1');
         }
 
         $societyId = $this->societyModel->create($_POST, Session::get('user_id'));
         if ($societyId) {
             Session::set('active_society_id', $societyId);
-            Session::setFlash('success', "Society '{$societyName}' registered successfully!");
+            Session::set('active_society_name', $societyName);
+            Session::setFlash('success', "Society '{$societyName}' registered successfully! You can now add members to this society.");
+            $this->redirect('/members');
         } else {
             Session::setFlash('error', "Failed to register society.");
+            $this->redirect('/registration?new=1');
         }
-
-        $this->redirect('/registration');
     }
 
     public function selectActiveSociety() {

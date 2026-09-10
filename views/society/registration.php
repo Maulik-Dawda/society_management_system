@@ -128,8 +128,9 @@
       $flashSuccess = Session::getFlash('success');
       $flashErrors = Session::getFlash('errors');
       $old = Session::getFlash('old') ?? [];
-      $s = $society ?? [];
-      $isRegistered = !empty($s['pan_number']) || !empty($s['registered_address']);
+      $isNewForm = !empty($isNew) || isset($_GET['new']);
+      $s = $isNewForm ? [] : ($society ?? []);
+      $isRegistered = !$isNewForm && (!empty($s['pan_number']) || !empty($s['registered_address']));
       ?>
 
       <?php if ($flashError): ?>
@@ -304,7 +305,7 @@
           
           <div class="field">
             <label for="society_name">Society name <span class="req-star">*</span></label>
-            <input type="text" id="society_name" name="society_name" value="<?= htmlspecialchars($old['society_name'] ?? ($s['name'] ?? Session::get('society_name') ?? 'Meridian Heights Cooperative Housing Society')) ?>" required>
+            <input type="text" id="society_name" name="society_name" placeholder="e.g. Meridian Heights CHS" value="<?= htmlspecialchars($old['society_name'] ?? ($s['name'] ?? '')) ?>" required>
           </div>
 
           <div class="row2">
