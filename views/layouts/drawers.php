@@ -248,6 +248,29 @@
   </form>
 </div>
 
+<!-- File Complaint Modal -->
+<div class="overlay" id="fileComplaintModal">
+  <form class="drawer" action="/complaints/add" method="POST">
+    <button type="button" class="close-btn" onclick="document.getElementById('fileComplaintModal').classList.remove('open')">✕</button>
+    <h2>Lodge Complaint</h2>
+    <div class="hint">Register a maintenance issue or grievance for committee review.</div>
+    <div class="field"><label>Subject / Issue Title *</label><input type="text" name="title" placeholder="e.g. Water Leakage in Main Pipe" required></div>
+    <div class="field">
+      <label>Category</label>
+      <select name="category">
+        <option value="General">General</option>
+        <option value="Plumbing">Plumbing</option>
+        <option value="Electrical">Electrical</option>
+        <option value="Elevator">Elevator / Lift</option>
+        <option value="Security">Security</option>
+        <option value="Cleanliness">Cleanliness</option>
+      </select>
+    </div>
+    <div class="field"><label>Description *</label><textarea name="description" rows="4" placeholder="Describe the issue in detail..." required></textarea></div>
+    <button type="submit" class="save-btn">Lodge Complaint</button>
+  </form>
+</div>
+
 <!-- Receipt Preview Modal -->
 <div class="modal-overlay" id="receiptModal">
   <div class="receipt">

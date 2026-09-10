@@ -2,10 +2,12 @@
 $scriptName = dirname($_SERVER['SCRIPT_NAME']);
 $baseUrl = ($scriptName === '/' || $scriptName === '\\') ? '' : rtrim(str_replace('\\', '/', $scriptName), '/');
 $currentUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$activeSocietyName = Session::get('active_society_name') ?? 'Meridian Heights';
+$activeUserRole = Session::get('user_role') ?? 'Resident';
 ?>
 <!-- ===== Sidebar Component ===== -->
 <div class="sidebar">
-  <div class="brand">Meridian Heights</div>
+  <div class="brand"><?= htmlspecialchars($activeSocietyName) ?></div>
   <div class="subbrand">Cooperative Housing Society</div>
 
   <div class="langswitch">
@@ -18,15 +20,18 @@ $currentUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
     <a href="/dashboard" data-page="dashboard" class="navitem <?= (isset($activePage) && $activePage === 'dashboard') ? 'active' : '' ?>"><span class="ic">◆</span><span>Dashboard</span></a>
   </div>
 
+  <?php if (!empty(Session::get('is_admin'))): ?>
   <div class="navgroup">
-    <div class="navlabel">Setup</div>
-    <a href="/registration" data-page="registration" class="navitem <?= (isset($activePage) && $activePage === 'registration') ? 'active' : '' ?>"><span class="ic">⚙</span><span>Society registration</span></a>
+    <div class="navlabel">Admin Setup</div>
+    <a href="/registration" data-page="registration" class="navitem <?= (isset($activePage) && $activePage === 'registration') ? 'active' : '' ?>"><span class="ic">⚙</span><span>Society Registration</span></a>
   </div>
+  <?php endif; ?>
 
   <div class="navgroup">
     <div class="navlabel">Society</div>
     <a href="/members" data-page="members" class="navitem <?= (isset($activePage) && $activePage === 'members') ? 'active' : '' ?>"><span class="ic">☰</span><span>Members</span></a>
     <a href="/committee" data-page="committee" class="navitem <?= (isset($activePage) && $activePage === 'committee') ? 'active' : '' ?>"><span class="ic">★</span><span>Committee</span></a>
+    <a href="/complaints" data-page="complaints" class="navitem <?= (isset($activePage) && $activePage === 'complaints') ? 'active' : '' ?>"><span class="ic">💬</span><span>Complaints</span></a>
     <a href="/notices" data-page="notices" class="navitem <?= (isset($activePage) && $activePage === 'notices') ? 'active' : '' ?>"><span class="ic">▤</span><span>Notice board</span></a>
     <a href="/vehicles" data-page="vehicles" class="navitem <?= (isset($activePage) && $activePage === 'vehicles') ? 'active' : '' ?>"><span class="ic">▭</span><span>Vehicles</span></a>
   </div>
@@ -42,7 +47,10 @@ $currentUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
   <div class="sidebar-foot">
     <div style="display:flex; align-items:center; gap:8px;">
       <div class="avatar"><?= strtoupper(substr(Session::get('user_name') ?? 'MH', 0, 2)) ?></div>
-      <div><?= htmlspecialchars(Session::get('user_name') ?? 'Member') ?> · Member</div>
+      <div>
+        <?= htmlspecialchars(Session::get('user_name') ?? 'User') ?><br>
+        <span style="font-size:10px; color:#B9812A; font-weight:600;"><?= htmlspecialchars($activeUserRole) ?></span>
+      </div>
     </div>
     <a href="/logout" style="color:#F4E1D8; text-decoration:none; font-size:11px; background:rgba(177,74,46,0.3); padding:4px 8px; border-radius:4px;">Logout</a>
   </div>

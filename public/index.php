@@ -9,20 +9,28 @@ require_once __DIR__ . '/../core/App.php';
 try {
     $app = new App();
 
-    // Define Auth Routes
+    // REST API Routes (for WhatsApp Chatbot & External Integrations)
+    $app->post('/api/v1/auth/login', ['ApiController', 'login']);
+    $app->get('/api/v1/societies', ['ApiController', 'getSocieties']);
+    $app->post('/api/v1/societies/register', ['ApiController', 'registerSociety']);
+    $app->get('/api/v1/members', ['ApiController', 'getMembers']);
+    $app->post('/api/v1/members/add', ['ApiController', 'addMember']);
+    $app->get('/api/v1/notices', ['ApiController', 'getNotices']);
+    $app->post('/api/v1/notices/add', ['ApiController', 'addNotice']);
+    $app->get('/api/v1/complaints', ['ApiController', 'getComplaints']);
+    $app->post('/api/v1/complaints/add', ['ApiController', 'addComplaint']);
+    $app->post('/api/v1/complaints/update-status', ['ApiController', 'updateComplaintStatus']);
+
+    // Define Web Auth Routes
     $app->get('/', ['AuthController', 'login']);
     $app->get('/login', ['AuthController', 'login']);
     $app->post('/login', ['AuthController', 'processLogin']);
 
+    $app->get('/select-society', ['AuthController', 'selectSocietyPage']);
+    $app->post('/select-society', ['AuthController', 'chooseSociety']);
+
     $app->get('/register', ['AuthController', 'register']);
     $app->post('/register', ['AuthController', 'processRegister']);
-
-    $app->get('/verify-otp', ['AuthController', 'verifyOtp']);
-    $app->post('/verify-otp', ['AuthController', 'processVerifyOtp']);
-
-    $app->get('/set-password', ['AuthController', 'setPassword']);
-    $app->post('/set-password', ['AuthController', 'processSetPassword']);
-
     $app->get('/logout', ['AuthController', 'logout']);
 
     // Define Dashboard Route
@@ -41,6 +49,11 @@ try {
     $app->get('/committee', ['SocietyController', 'committee']);
     $app->post('/committee/assign', ['SocietyController', 'assignCommitteeRole']);
     $app->get('/society/committee', ['SocietyController', 'committee']);
+
+    $app->get('/complaints', ['ComplaintController', 'index']);
+    $app->post('/complaints/add', ['ComplaintController', 'add']);
+    $app->post('/complaints/update-status', ['ComplaintController', 'updateStatus']);
+    $app->get('/society/complaints', ['ComplaintController', 'index']);
 
     $app->get('/notices', ['SocietyController', 'notices']);
     $app->post('/notices/add', ['SocietyController', 'addNotice']);

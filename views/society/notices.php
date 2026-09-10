@@ -19,11 +19,6 @@
   .navitem .ic{width:18px; text-align:center; font-size:14px; opacity:.85;}
   .navitem:hover{background:rgba(255,255,255,.06);}
   .navitem.active{background:#EFE9DA; color:var(--green-dark);}
-  .langswitch{display:flex; border:1px solid rgba(255,255,255,.18); border-radius:8px; overflow:hidden; margin-bottom:18px;}
-  .langswitch div{flex:1; text-align:center; padding:8px 6px; font-size:12px; font-weight:500; color:#B9C7BE;}
-  .langswitch div.active{background:#EFE9DA; color:var(--green-dark);}
-  .sidebar-foot{margin-top:auto; padding-top:16px; border-top:1px solid rgba(255,255,255,.12); font-size:11.5px; color:#9FB3A8; display:flex; align-items:center; justify-content:space-between;}
-  .avatar{width:26px; height:26px; border-radius:50%; background:var(--gold); color:#fff; display:flex; align-items:center; justify-content:center; font-family:'Fraunces',serif; font-weight:600; font-size:11px;}
   .main{flex:1; padding:32px 40px 80px; overflow-x:hidden;}
   .content-wrap{max-width:1180px; margin:0 auto;}
   .topbar{display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:28px; border-bottom:1.5px solid var(--ink); padding-bottom:18px;}
@@ -63,6 +58,7 @@
       <?php
       $flashSuccess = Session::getFlash('success');
       $flashError = Session::getFlash('error');
+      $isChairmanOrAdmin = (isset($userRole) && $userRole === 'Chairman') || !empty($isAdmin);
       ?>
       <?php if ($flashSuccess): ?>
         <div class="alert alert-success"><?= htmlspecialchars($flashSuccess) ?></div>
@@ -78,7 +74,12 @@
           <div class="chip">Maintenance</div>
           <div class="chip">Urgent</div>
         </div>
-        <button class="btn" onclick="document.getElementById('postNoticeModal').classList.add('open')">＋ Post Notice</button>
+        
+        <?php if ($isChairmanOrAdmin): ?>
+          <button class="btn" onclick="document.getElementById('postNoticeModal').classList.add('open')">＋ Post Notice (Chairman)</button>
+        <?php else: ?>
+          <span style="font-size:12.5px; color:var(--ink-soft); font-style:italic;">★ Notices can only be issued by the Society Chairman</span>
+        <?php endif; ?>
       </div>
 
       <div class="noticegrid">
@@ -90,7 +91,7 @@
               <div class="body"><?= nl2br(htmlspecialchars($n['content'])) ?></div>
               <div class="foot">
                 <span>Posted on <?= date('d M Y', strtotime($n['notice_date'])) ?></span>
-                <span>Managing Committee</span>
+                <span>Chairman / Committee</span>
               </div>
             </div>
           <?php endforeach; ?>
@@ -100,14 +101,14 @@
             <div class="tag">⚠️ URGENT · Water Supply</div>
             <h2>Water Tank Cleaning Schedule</h2>
             <div class="body">Overhead water tank cleaning is scheduled for this Sunday from 9:00 AM to 2:00 PM. Water supply will remain suspended during this window. Please store sufficient water in advance.</div>
-            <div class="foot"><span>Posted on <?= date('d M Y') ?></span><span>Managing Committee</span></div>
+            <div class="foot"><span>Posted on <?= date('d M Y') ?></span><span>Chairman</span></div>
           </div>
 
           <div class="ncard">
             <div class="tag">General · Annual Meeting</div>
             <h2>Annual General Body Meeting (AGM)</h2>
             <div class="body">Notice is hereby given that the 12th Annual General Body Meeting of Meridian Heights CHS will be held on 15th September 2026 at the Clubhouse. All members are requested to attend.</div>
-            <div class="foot"><span>Posted on <?= date('d M Y', strtotime('-3 days')) ?></span><span>Secretary</span></div>
+            <div class="foot"><span>Posted on <?= date('d M Y', strtotime('-3 days')) ?></span><span>Chairman</span></div>
           </div>
         <?php endif; ?>
       </div>

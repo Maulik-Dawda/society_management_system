@@ -4,14 +4,16 @@ require_once __DIR__ . '/../core/Model.php';
 
 class User extends Model {
 
-    public function getAll() {
-        $stmt = $this->db->query("SELECT * FROM users WHERE mobile_number NOT IN (SELECT owner_phone FROM members WHERE LOWER(TRIM(owner_email)) = 'maulik@septixtechnologies.com') ORDER BY id ASC");
-        return $stmt->fetchAll();
+    public function findByEmail($email) {
+        $stmt = $this->db->prepare("SELECT * FROM users WHERE LOWER(email) = LOWER(:email) LIMIT 1");
+        $stmt->execute([':email' => trim($email)]);
+        return $stmt->fetch();
     }
 
     public function findByMobile($mobile) {
-        $stmt = $this->db->prepare("SELECT * FROM users WHERE mobile_number = :mobile LIMIT 1");
-        $stmt->execute([':mobile' => $mobile]);
+        $cleanMobile = preg_replace('/[^0-9]/', '', $mobile);
+        $stmt = $this->db->prepare("SELECT * FROM users WHERE mobile_number LIKE :mobile LIMIT 1");
+        $stmt->execute([':mobile' => "%{$cleanMobile}"]);
         return $stmt->fetch();
     }
 
@@ -21,42 +23,42 @@ class User extends Model {
         return $stmt->fetch();
     }
 
-    public function create($name, $societyName, $mobile) {
-        // Check if existing user with pending status exists
-        $existing = $this->findByMobile($mobile);
-        if ($existing) {
-            $stmt = $this->db->prepare("UPDATE users SET name = :name, society_name = :society, status = 'pending_otp' WHERE id = :id");
-            $stmt->execute([
-                ':name' => $name,
-                ':society' => $societyName,
-                ':id' => $existing['id']
-            ]);
-            return $existing['id'];
-        }
-
-        $stmt = $this->db->prepare("INSERT INTO users (name, society_name, mobile_number, status) VALUES (:name, :society, :mobile, 'pending_otp')");
+    public function create($name, $mobile, $email, $password, $isAdmin = 0) {
+        $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+        $stmt = $this->db->prepare("INSERT INTO users (name, mobile_number, email, password_hash, is_admin, status) VALUES (:name, :mobile, :email, :hash, :is_admin, 'active')");
         $stmt->execute([
             ':name' => $name,
-            ':society' => $societyName,
-            ':mobile' => $mobile
+            ':mobile' => !empty($mobile) ? trim($mobile) : null,
+            ':email' => !empty($email) ? trim($email) : null,
+            ':hash' => $passwordHash,
+            ':is_admin' => $isAdmin ? 1 : 0
         ]);
 
         return $this->db->lastInsertId();
     }
 
-    public function updateStatus($userId, $status) {
-        $stmt = $this->db->prepare("UPDATE users SET status = :status WHERE id = :id");
-        return $stmt->execute([
-            ':status' => $status,
-            ':id' => $userId
-        ]);
+    public function getUserSocieties($mobile, $userId = null) {
+        $sql = "SELECT DISTINCT s.*, m.flat_number, m.committee_role, m.id as member_id
+                FROM societies s
+                JOIN members m ON s.id = m.society_id
+                WHERE (m.owner_phone LIKE :mobile OR m.tenant_phone LIKE :mobile";
+        
+        $params = [':mobile' => "%" . preg_replace('/[^0-9]/', '', $mobile)];
+        if ($userId) {
+            $sql .= " OR m.user_id = :user_id";
+            $params[':user_id'] = $userId;
+        }
+        $sql .= ") ORDER BY s.name ASC";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
     }
 
-    public function updatePassword($userId, $passwordHash) {
-        $stmt = $this->db->prepare("UPDATE users SET password_hash = :hash, status = 'active' WHERE id = :id");
-        return $stmt->execute([
-            ':hash' => $passwordHash,
-            ':id' => $userId
-        ]);
+    public function verifyPassword($user, $password) {
+        if (!$user || empty($user['password_hash'])) {
+            return false;
+        }
+        return password_verify($password, $user['password_hash']);
     }
 }
