@@ -47,12 +47,16 @@ class User extends Model {
     }
 
     public function getUserSocieties($mobile, $userId = null) {
+        $cleanMobile = preg_replace('/[^0-9]/', '', $mobile);
         $sql = "SELECT DISTINCT s.*, m.flat_number, m.committee_role, m.id as member_id
                 FROM societies s
                 JOIN members m ON s.id = m.society_id
-                WHERE (m.owner_phone LIKE :mobile OR m.tenant_phone LIKE :mobile";
+                WHERE (m.owner_phone LIKE :owner_phone OR m.tenant_phone LIKE :tenant_phone";
         
-        $params = [':mobile' => "%" . preg_replace('/[^0-9]/', '', $mobile)];
+        $params = [
+            ':owner_phone' => "%" . $cleanMobile,
+            ':tenant_phone' => "%" . $cleanMobile
+        ];
         if ($userId) {
             $sql .= " OR m.user_id = :user_id";
             $params[':user_id'] = $userId;

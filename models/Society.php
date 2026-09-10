@@ -28,10 +28,10 @@ class Society extends Model {
         try {
             $stmt = $this->db->prepare("SELECT s.* FROM societies s
                 JOIN members m ON s.id = m.society_id
-                JOIN users u ON u.id = :user_id
-                WHERE m.user_id = :user_id OR (u.mobile_number IS NOT NULL AND (m.owner_phone LIKE CONCAT('%', u.mobile_number) OR m.tenant_phone LIKE CONCAT('%', u.mobile_number)))
+                JOIN users u ON u.id = :u_user_id
+                WHERE m.user_id = :m_user_id OR (u.mobile_number IS NOT NULL AND (m.owner_phone LIKE CONCAT('%', u.mobile_number) OR m.tenant_phone LIKE CONCAT('%', u.mobile_number)))
                 LIMIT 1");
-            $stmt->execute([':user_id' => $userId]);
+            $stmt->execute([':u_user_id' => $userId, ':m_user_id' => $userId]);
             $society = $stmt->fetch();
             if ($society) {
                 return $society;

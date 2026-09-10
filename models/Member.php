@@ -30,10 +30,11 @@ class Member extends Model {
 
     public function getMemberByPhoneAndSociety($phone, $societyId) {
         $cleanPhone = preg_replace('/[^0-9]/', '', $phone);
-        $stmt = $this->db->prepare("SELECT * FROM members WHERE society_id = :society_id AND (owner_phone LIKE :phone OR tenant_phone LIKE :phone) LIMIT 1");
+        $stmt = $this->db->prepare("SELECT * FROM members WHERE society_id = :society_id AND (owner_phone LIKE :owner_phone OR tenant_phone LIKE :tenant_phone) LIMIT 1");
         $stmt->execute([
             ':society_id' => $societyId,
-            ':phone' => "%{$cleanPhone}"
+            ':owner_phone' => "%{$cleanPhone}",
+            ':tenant_phone' => "%{$cleanPhone}"
         ]);
         return $stmt->fetch();
     }
