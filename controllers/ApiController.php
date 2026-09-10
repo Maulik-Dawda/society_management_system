@@ -23,7 +23,7 @@ class ApiController extends Controller {
     private function getJsonInput() {
         $raw = file_get_contents('php://input');
         $json = json_decode($raw, true);
-        return is_array($json) ? array_merge($_POST, $json) : $_POST;
+        return array_merge($_GET, $_POST, is_array($json) ? $json : []);
     }
 
     // GET /api/v1/users/check-mobile?mobile=XXXXXXXXXX
