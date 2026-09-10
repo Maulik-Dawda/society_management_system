@@ -373,11 +373,17 @@ class Database {
 
     private function columnExists($pdo, $table, $column) {
         try {
-            $stmt = $pdo->prepare("SHOW COLUMNS FROM `{$table}` LIKE ?");
-            $stmt->execute([$column]);
+            $stmt = $pdo->prepare("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND COLUMN_NAME = :column LIMIT 1");
+            $stmt->execute([':table' => $table, ':column' => $column]);
             return (bool) $stmt->fetch();
-        } catch (PDOException $e) {
-            return false;
+        } catch (Throwable $e) {
+            try {
+                $quotedCol = $pdo->quote($column);
+                $res = $pdo->query("SHOW COLUMNS FROM `{$table}` LIKE {$quotedCol}");
+                return (bool) ($res ? $res->fetch() : false);
+            } catch (Throwable $e2) {
+                return false;
+            }
         }
     }
 }
