@@ -375,6 +375,100 @@ class ApiController extends Controller {
         ]);
     }
 
+    // GET / POST /api/v1/auth/get-user-role?user_id=X&society_id=Y&flat_no=Z
+    public function getUserRoleApi() {
+        $input = $this->getJsonInput();
+        $userId = intval($input['user_id'] ?? $input['userid'] ?? $input['user'] ?? $input['id'] ?? $_GET['user_id'] ?? $_GET['userid'] ?? $_GET['user'] ?? $_GET['id'] ?? (class_exists('Session') ? Session::get('user_id') : 0));
+        $societyId = intval($input['society_id'] ?? $input['societyid'] ?? $input['society'] ?? $_GET['society_id'] ?? $_GET['societyid'] ?? $_GET['society'] ?? 0);
+        $flatNo = trim($input['flat_no'] ?? $input['flat_number'] ?? $input['flat'] ?? $_GET['flat_no'] ?? $_GET['flat_number'] ?? $_GET['flat'] ?? '');
+        $mobile = trim($input['mobile_number'] ?? $input['phone_number'] ?? $input['phone'] ?? $_GET['mobile'] ?? (class_exists('Session') ? Session::get('user_mobile') : ''));
+
+        if ($userId <= 0 && empty($mobile)) {
+            return $this->jsonResponse(['status' => 'error', 'message' => 'Valid user_id or mobile_number parameter is required.'], 400);
+        }
+        if ($societyId <= 0) {
+            return $this->jsonResponse(['status' => 'error', 'message' => 'Valid society_id parameter is required.'], 400);
+        }
+
+        $userModel = new User();
+        $user = null;
+        if ($userId > 0) {
+            $user = $userModel->findById($userId);
+        }
+        if (!$user && !empty($mobile)) {
+            $user = $userModel->findByMobile($mobile);
+            if ($user) $userId = intval($user['id']);
+        }
+        if ($user && empty($mobile)) {
+            $mobile = $user['mobile_number'] ?? '';
+        }
+
+        // Query member record for exact society and flat
+        $last10 = (strlen($mobile) >= 10) ? substr($mobile, -10) : $mobile;
+        $sql = "SELECT m.*, s.name as society_name 
+                FROM members m 
+                JOIN societies s ON m.society_id = s.id 
+                WHERE m.society_id = :society_id";
+        $params = [':society_id' => $societyId];
+
+        if (!empty($flatNo)) {
+            $sql .= " AND (m.flat_number LIKE :flat OR REPLACE(m.flat_number, ' ', '') LIKE :flat)";
+            $params[':flat'] = "%" . str_replace(' ', '', $flatNo) . "%";
+        }
+
+        $stmt = $userModel->getDb()->prepare($sql);
+        $stmt->execute($params);
+        $members = $stmt->fetchAll();
+
+        $matchedMember = null;
+        if (!empty($members)) {
+            foreach ($members as $m) {
+                if ($m['user_id'] == $userId || (!empty($last10) && (strpos($m['owner_phone'] ?? '', $last10) !== false || strpos($m['tenant_phone'] ?? '', $last10) !== false))) {
+                    $matchedMember = $m;
+                    break;
+                }
+            }
+            if (!$matchedMember) {
+                $matchedMember = $members[0];
+            }
+        }
+
+        $role = $matchedMember['committee_role'] ?? 'Resident';
+        if (empty($role)) $role = 'Resident';
+        $flatNumber = $matchedMember['flat_number'] ?? ($flatNo ?: 'N/A');
+        $societyName = $matchedMember['society_name'] ?? 'Society';
+
+        $isChairman = (strpos($role, 'Chairman') !== false);
+        $rolesList = array_values(array_filter(array_map('trim', explode(',', $role))));
+
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'chocolate-chimpanzee-235196.hostingersite.com';
+        $baseUrl = "{$protocol}://{$host}";
+
+        $noticeUrl = "{$baseUrl}/api/v1/notices/add?society_id={$societyId}&phone_number={$mobile}&title={title}&content={content}";
+        $complaintUrl = "{$baseUrl}/api/v1/complaints/add?society_id={$societyId}&phone_number={$mobile}&title={title}&description={description}";
+
+        return $this->jsonResponse([
+            'status' => 'success',
+            'user_id' => $userId,
+            'society_id' => $societyId,
+            'society_name' => $societyName,
+            'flat_no' => $flatNumber,
+            'flat_number' => $flatNumber,
+            'role' => $role,
+            'committee_role' => $role,
+            'is_chairman' => $isChairman,
+            'roles' => $rolesList,
+            'allowed_options' => $isChairman ? ["Create Notice", "Register Complaint"] : ["Register Complaint"],
+            'whatsapp_action' => [
+                'role' => $role,
+                'allowed_option' => $isChairman ? "Create Notice" : "Register Complaint",
+                'notice_creation_url' => $noticeUrl,
+                'complaint_registration_url' => $complaintUrl
+            ]
+        ]);
+    }
+
     // GET /api/v1/societies
     public function getSocieties() {
         $societyModel = new Society();
