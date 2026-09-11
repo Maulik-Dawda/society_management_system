@@ -270,9 +270,24 @@ class ApiController extends Controller {
         // Attach select_api_url to each listed society for this user
         $formattedUserSocieties = array_map(function($s) use ($baseUrl, $userId, $mobile) {
             $sId = $s['id'] ?? $s['society_id'];
-            $s['select_api_url'] = "{$baseUrl}/api/v1/auth/select-society?user_id={$userId}&society_id={$sId}&mobile={$mobile}";
-            return $s;
+            return [
+                'id' => intval($sId),
+                'name' => $s['name'] ?? $s['society_name'] ?? 'Society',
+                'flat_number' => !empty($s['flat_number']) ? $s['flat_number'] : 'N/A',
+                'committee_role' => !empty($s['committee_role']) ? $s['committee_role'] : 'Resident',
+                'member_id' => $s['member_id'] ?? null,
+                'select_api_url' => "{$baseUrl}/api/v1/auth/select-society?society_id={$sId}&user_id={$userId}"
+            ];
         }, $userSocieties);
+
+        // If user_id was passed without selecting a specific society_id, return ONLY user_listed_societies part
+        if (intval($input['society_id'] ?? $_GET['society_id'] ?? $_POST['society_id'] ?? 0) <= 0) {
+            return $this->jsonResponse([
+                'status' => 'success',
+                'user_id' => $userId,
+                'user_listed_societies' => $formattedUserSocieties
+            ]);
+        }
 
         $isChairman = ($role === 'Chairman');
 
@@ -284,12 +299,7 @@ class ApiController extends Controller {
 
         return $this->jsonResponse([
             'status' => 'success',
-            'message' => "User ID {$userId} is listed in " . count($userSocieties) . " society(ies). Active society selected: '{$selectedSoc['name']}'",
-            'user' => [
-                'user_id' => $userId,
-                'name' => $user['name'] ?? 'User',
-                'mobile_number' => $mobile
-            ],
+            'user_id' => $userId,
             'active_society' => [
                 'id' => $selectedSoc['id'],
                 'name' => $selectedSoc['name'],
@@ -297,23 +307,7 @@ class ApiController extends Controller {
                 'committee_role' => $role,
                 'member_id' => $selectedSoc['member_id'] ?? null
             ],
-            'user_listed_societies_count' => count($userSocieties),
-            'user_listed_societies' => $formattedUserSocieties,
-            'grouped_societies' => $groupedSocieties,
-            'step_api_urls' => [
-                'select_society_by_user_url' => "{$baseUrl}/api/v1/auth/select-society?user_id={$userId}&society_id={society_id}",
-                'step1_select_society_url' => "{$baseUrl}/api/v1/auth/select-society?user_id={$userId}&society_id={$selectedSoc['id']}",
-                'step2_choose_flat_url' => "{$baseUrl}/api/v1/auth/select-society?user_id={$userId}&society_id={$selectedSoc['id']}&flat_number={flat_number}",
-                'step3_select_role_url' => "{$baseUrl}/api/v1/auth/select-society?user_id={$userId}&society_id={$selectedSoc['id']}&flat_number={$flatNumber}&role={role}"
-            ],
-            'whatsapp_action' => [
-                'role' => $role,
-                'allowed_option' => $actionOption,
-                'action_url_template' => $actionUrl,
-                'notice_creation_url' => "{$baseUrl}/api/v1/notices/add?society_id={$selectedSoc['id']}&phone_number={$mobile}&title={title}&content={content}",
-                'complaint_registration_url' => "{$baseUrl}/api/v1/complaints/add?society_id={$selectedSoc['id']}&phone_number={$mobile}&title={title}&description={description}"
-            ],
-            'dashboard_url' => "{$baseUrl}/dashboard"
+            'user_listed_societies' => $formattedUserSocieties
         ]);
     }
 
