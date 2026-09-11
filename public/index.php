@@ -16,6 +16,9 @@ try {
     $app->post('/api/v1/auth/user-login', ['ApiController', 'userLogin']);
     $app->get('/api/v1/auth/select-society', ['ApiController', 'selectSocietyApi']);
     $app->post('/api/v1/auth/select-society', ['ApiController', 'selectSocietyApi']);
+    $app->get('/api/v1/auth/get-flat-no', ['ApiController', 'getFlatNoApi']);
+    $app->post('/api/v1/auth/get-flat-no', ['ApiController', 'getFlatNoApi']);
+    $app->get('/api/v1/users/flats', ['ApiController', 'getFlatNoApi']);
     $app->get('/api/v1/users/check-mobile', ['ApiController', 'checkMobile']);
     $app->get('/api/v1/societies', ['ApiController', 'getSocieties']);
     $app->post('/api/v1/societies/register', ['ApiController', 'registerSociety']);

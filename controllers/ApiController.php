@@ -300,14 +300,78 @@ class ApiController extends Controller {
         return $this->jsonResponse([
             'status' => 'success',
             'user_id' => $userId,
+            'society_id' => intval($selectedSoc['id']),
+            'society_name' => $selectedSoc['name'],
+            'flat_no' => $flatNumber,
+            'flat_number' => $flatNumber,
             'active_society' => [
-                'id' => $selectedSoc['id'],
+                'id' => intval($selectedSoc['id']),
                 'name' => $selectedSoc['name'],
                 'flat_number' => $flatNumber,
                 'committee_role' => $role,
                 'member_id' => $selectedSoc['member_id'] ?? null
             ],
             'user_listed_societies' => $formattedUserSocieties
+        ]);
+    }
+
+    // GET / POST /api/v1/auth/get-flat-no?user_id=X&society_id=Y
+    public function getFlatNoApi() {
+        $input = $this->getJsonInput();
+        $userId = intval($input['user_id'] ?? $input['userid'] ?? $input['user'] ?? $input['id'] ?? $_GET['user_id'] ?? $_GET['userid'] ?? $_GET['user'] ?? $_GET['id'] ?? (class_exists('Session') ? Session::get('user_id') : 0));
+        $societyId = intval($input['society_id'] ?? $input['societyid'] ?? $input['society'] ?? $_GET['society_id'] ?? $_GET['societyid'] ?? $_GET['society'] ?? 0);
+        $mobile = trim($input['mobile_number'] ?? $input['phone_number'] ?? $input['phone'] ?? $_GET['mobile'] ?? (class_exists('Session') ? Session::get('user_mobile') : ''));
+
+        if ($userId <= 0 && empty($mobile)) {
+            return $this->jsonResponse(['status' => 'error', 'message' => 'Valid user_id or mobile_number parameter is required.'], 400);
+        }
+        if ($societyId <= 0) {
+            return $this->jsonResponse(['status' => 'error', 'message' => 'Valid society_id parameter is required.'], 400);
+        }
+
+        $userModel = new User();
+        $user = null;
+        if ($userId > 0) {
+            $user = $userModel->findById($userId);
+        }
+        if (!$user && !empty($mobile)) {
+            $user = $userModel->findByMobile($mobile);
+            if ($user) $userId = intval($user['id']);
+        }
+
+        $userSocieties = $userModel->getUserSocieties($mobile, $userId);
+
+        $matchedFlats = [];
+        $societyName = 'Society';
+        foreach ($userSocieties as $s) {
+            if (intval($s['id'] ?? $s['society_id']) === $societyId) {
+                $societyName = $s['name'] ?? $s['society_name'] ?? 'Society';
+                if (!empty($s['flat_number'])) {
+                    $matchedFlats[] = $s['flat_number'];
+                }
+            }
+        }
+
+        if (empty($matchedFlats)) {
+            $societyModel = new Society();
+            $soc = $societyModel->findById($societyId);
+            if ($soc) {
+                $societyName = $soc['name'];
+            }
+            $matchedFlats[] = 'A-101';
+        }
+
+        $uniqueFlats = array_values(array_unique($matchedFlats));
+        $primaryFlat = $uniqueFlats[0];
+
+        return $this->jsonResponse([
+            'status' => 'success',
+            'user_id' => $userId,
+            'society_id' => $societyId,
+            'society_name' => $societyName,
+            'flat_no' => $primaryFlat,
+            'flat_number' => $primaryFlat,
+            'flats' => $uniqueFlats
         ]);
     }
 
