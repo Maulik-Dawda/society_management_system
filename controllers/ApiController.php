@@ -159,12 +159,14 @@ class ApiController extends Controller {
         ]);
     }
 
-    // GET / POST /api/v1/auth/select-society?society_id=X&user_id=Y
+    // GET / POST /api/v1/auth/select-society?society_id=X&user_id=Y&flat_number=Z&role=W
     public function selectSocietyApi() {
         $input = $this->getJsonInput();
         $societyId = intval($input['society_id'] ?? $_GET['society_id'] ?? $_POST['society_id'] ?? 0);
         $userId = intval($input['user_id'] ?? $_GET['user_id'] ?? $_POST['user_id'] ?? (class_exists('Session') ? Session::get('user_id') : 0));
         $mobile = trim($input['mobile_number'] ?? $input['phone_number'] ?? $input['phone'] ?? $_GET['mobile'] ?? (class_exists('Session') ? Session::get('user_mobile') : ''));
+        $reqFlat = trim($input['flat_number'] ?? $input['flat'] ?? $_GET['flat_number'] ?? $_GET['flat'] ?? '');
+        $reqRole = trim($input['role'] ?? $input['committee_role'] ?? $_GET['role'] ?? $_GET['committee_role'] ?? '');
 
         if ($societyId <= 0) {
             return $this->jsonResponse(['status' => 'error', 'message' => 'Valid society_id parameter is required in URL or request body.'], 400);
@@ -190,11 +192,14 @@ class ApiController extends Controller {
             return $this->jsonResponse(['status' => 'error', 'message' => "Society with ID {$societyId} not found."], 404);
         }
 
+        $flatNumber = !empty($reqFlat) ? $reqFlat : ($selectedSoc['flat_number'] ?? 'N/A');
+        $role = !empty($reqRole) ? $reqRole : ($selectedSoc['committee_role'] ?? 'Resident');
+
         if (session_status() === PHP_SESSION_ACTIVE && class_exists('Session')) {
             Session::set('active_society_id', $selectedSoc['id']);
             Session::set('active_society_name', $selectedSoc['name']);
-            Session::set('user_role', $selectedSoc['committee_role'] ?? 'Resident');
-            Session::set('user_flat', $selectedSoc['flat_number'] ?? '');
+            Session::set('user_role', $role);
+            Session::set('user_flat', $flatNumber);
             Session::set('user_member_id', $selectedSoc['member_id'] ?? null);
         }
 
@@ -202,7 +207,6 @@ class ApiController extends Controller {
         $host = $_SERVER['HTTP_HOST'] ?? 'chocolate-chimpanzee-235196.hostingersite.com';
         $baseUrl = "{$protocol}://{$host}";
 
-        $role = $selectedSoc['committee_role'] ?? 'Resident';
         $isChairman = ($role === 'Chairman');
 
         $noticeUrlTemplate = "{$baseUrl}/api/v1/notices/add?society_id={$selectedSoc['id']}&phone_number={$mobile}&title={title}&content={content}&category=General&is_urgent=0";
@@ -213,13 +217,26 @@ class ApiController extends Controller {
 
         return $this->jsonResponse([
             'status' => 'success',
-            'message' => "Successfully selected society '{$selectedSoc['name']}'",
+            'message' => "Successfully selected Society '{$selectedSoc['name']}', Flat '{$flatNumber}', Role '{$role}'",
+            'selection_steps' => [
+                'step1_society' => [
+                    'id' => $selectedSoc['id'],
+                    'name' => $selectedSoc['name']
+                ],
+                'step2_flat_number' => $flatNumber,
+                'step3_role' => $role
+            ],
             'active_society' => [
                 'id' => $selectedSoc['id'],
                 'name' => $selectedSoc['name'],
-                'flat_number' => $selectedSoc['flat_number'] ?? 'N/A',
+                'flat_number' => $flatNumber,
                 'committee_role' => $role,
                 'member_id' => $selectedSoc['member_id'] ?? null
+            ],
+            'step_api_urls' => [
+                'step1_select_society_url' => "{$baseUrl}/api/v1/auth/select-society?society_id={$selectedSoc['id']}&user_id={$userId}",
+                'step2_choose_flat_url' => "{$baseUrl}/api/v1/auth/select-society?society_id={$selectedSoc['id']}&user_id={$userId}&flat_number={flat_number}",
+                'step3_select_role_url' => "{$baseUrl}/api/v1/auth/select-society?society_id={$selectedSoc['id']}&user_id={$userId}&flat_number={$flatNumber}&role={role}"
             ],
             'whatsapp_action' => [
                 'role' => $role,

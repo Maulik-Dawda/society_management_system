@@ -123,6 +123,8 @@ class AuthController extends Controller {
         }
 
         $societyId = intval($_POST['society_id'] ?? 0);
+        $flatNumber = trim($_POST['flat_number'] ?? '');
+        $role = trim($_POST['role'] ?? $_POST['committee_role'] ?? '');
         $userId = Session::get('user_id');
         $mobile = Session::get('user_mobile');
 
@@ -136,17 +138,25 @@ class AuthController extends Controller {
         }
 
         if (!$selectedSoc) {
+            $societyModel = new Society();
+            $selectedSoc = $societyModel->findById($societyId);
+        }
+
+        if (!$selectedSoc) {
             Session::setFlash('error', "Invalid society selected.");
             $this->redirect('/select-society');
         }
 
+        $finalFlat = !empty($flatNumber) ? $flatNumber : ($selectedSoc['flat_number'] ?? 'N/A');
+        $finalRole = !empty($role) ? $role : ($selectedSoc['committee_role'] ?? 'Resident');
+
         Session::set('active_society_id', $selectedSoc['id']);
         Session::set('active_society_name', $selectedSoc['name']);
-        Session::set('user_role', $selectedSoc['committee_role'] ?? 'Resident');
-        Session::set('user_flat', $selectedSoc['flat_number'] ?? '');
+        Session::set('user_role', $finalRole);
+        Session::set('user_flat', $finalFlat);
         Session::set('user_member_id', $selectedSoc['member_id'] ?? null);
 
-        Session::setFlash('success', "Entered society: " . htmlspecialchars($selectedSoc['name']));
+        Session::setFlash('success', "Entered " . htmlspecialchars($selectedSoc['name']) . " (Flat: " . htmlspecialchars($finalFlat) . ", Role: " . htmlspecialchars($finalRole) . ")");
         $this->redirect('/dashboard');
     }
 

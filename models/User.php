@@ -78,6 +78,41 @@ class User extends Model {
         return $stmtAll->fetchAll();
     }
 
+    public function getUserSocietiesGrouped($mobile, $userId = null) {
+        $raw = $this->getUserSocieties($mobile, $userId);
+        $grouped = [];
+        foreach ($raw as $row) {
+            $socId = intval($row['id'] ?? $row['society_id'] ?? 1);
+            if (!isset($grouped[$socId])) {
+                $grouped[$socId] = [
+                    'id' => $socId,
+                    'society_id' => $socId,
+                    'name' => $row['name'] ?? $row['society_name'] ?? 'Society',
+                    'flats' => []
+                ];
+            }
+            $flat = !empty($row['flat_number']) ? $row['flat_number'] : 'N/A';
+            $role = !empty($row['committee_role']) ? $row['committee_role'] : 'Resident';
+            
+            // Avoid duplicate flats for the same society
+            $exists = false;
+            foreach ($grouped[$socId]['flats'] as $f) {
+                if ($f['flat_number'] === $flat && $f['committee_role'] === $role) {
+                    $exists = true;
+                    break;
+                }
+            }
+            if (!$exists) {
+                $grouped[$socId]['flats'][] = [
+                    'flat_number' => $flat,
+                    'committee_role' => $role,
+                    'member_id' => $row['member_id'] ?? null
+                ];
+            }
+        }
+        return array_values($grouped);
+    }
+
     public function verifyPassword($user, $password) {
         if (!$user || empty($user['password_hash'])) {
             return false;
