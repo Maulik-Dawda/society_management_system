@@ -188,33 +188,64 @@ class ApiController extends Controller {
         ]);
     }
 
-    // GET / POST /api/v1/auth/select-society?society_id=X&user_id=Y&flat_number=Z&role=W
+    // GET / POST /api/v1/auth/select-society?user_id=Y&society_id=X&flat_number=Z&role=W
     public function selectSocietyApi() {
         $input = $this->getJsonInput();
         $societyId = intval($input['society_id'] ?? $_GET['society_id'] ?? $_POST['society_id'] ?? 0);
-        $userId = intval($input['user_id'] ?? $_GET['user_id'] ?? $_POST['user_id'] ?? (class_exists('Session') ? Session::get('user_id') : 0));
+        $userId = intval($input['user_id'] ?? $input['userid'] ?? $input['user'] ?? $input['id'] ?? $_GET['user_id'] ?? $_GET['userid'] ?? $_GET['user'] ?? $_GET['id'] ?? (class_exists('Session') ? Session::get('user_id') : 0));
         $mobile = trim($input['mobile_number'] ?? $input['phone_number'] ?? $input['phone'] ?? $_GET['mobile'] ?? (class_exists('Session') ? Session::get('user_mobile') : ''));
         $reqFlat = trim($input['flat_number'] ?? $input['flat'] ?? $_GET['flat_number'] ?? $_GET['flat'] ?? '');
         $reqRole = trim($input['role'] ?? $input['committee_role'] ?? $_GET['role'] ?? $_GET['committee_role'] ?? '');
 
-        if ($societyId <= 0) {
-            return $this->jsonResponse(['status' => 'error', 'message' => 'Valid society_id parameter is required in URL or request body.'], 400);
-        }
-
         $userModel = new User();
-        $societies = $userModel->getUserSocieties($mobile, $userId);
-
-        $selectedSoc = null;
-        foreach ($societies as $s) {
-            if (intval($s['id']) === $societyId) {
-                $selectedSoc = $s;
-                break;
-            }
+        $user = null;
+        if ($userId > 0) {
+            $user = $userModel->findById($userId);
+        }
+        if (!$user && !empty($mobile)) {
+            $user = $userModel->findByMobile($mobile);
         }
 
-        if (!$selectedSoc) {
-            $societyModel = new Society();
-            $selectedSoc = $societyModel->findById($societyId);
+        if ($user && empty($mobile)) {
+            $mobile = $user['mobile_number'] ?? '';
+        }
+        if ($user && $userId <= 0) {
+            $userId = intval($user['id']);
+        }
+
+        if ($userId <= 0 && $societyId <= 0 && empty($mobile)) {
+            return $this->jsonResponse(['status' => 'error', 'message' => 'Valid user_id or mobile_number or society_id parameter is required.'], 400);
+        }
+
+        // Fetch all societies in which this user is listed / registered
+        $userSocieties = $userModel->getUserSocieties($mobile, $userId);
+        $groupedSocieties = $userModel->getUserSocietiesGrouped($mobile, $userId);
+
+        if (empty($userSocieties)) {
+            return $this->jsonResponse([
+                'status' => 'error',
+                'message' => "No registered societies found for User ID {$userId}.",
+                'user_id' => $userId
+            ], 404);
+        }
+
+        // Determine target society: if society_id passed, use it; otherwise default to first listed society for this user
+        $selectedSoc = null;
+        if ($societyId > 0) {
+            foreach ($userSocieties as $s) {
+                if (intval($s['id'] ?? $s['society_id']) === $societyId) {
+                    $selectedSoc = $s;
+                    break;
+                }
+            }
+            if (!$selectedSoc) {
+                $societyModel = new Society();
+                $selectedSoc = $societyModel->findById($societyId);
+            }
+        } else {
+            // Default to first society where user is listed
+            $selectedSoc = $userSocieties[0];
+            $societyId = intval($selectedSoc['id'] ?? $selectedSoc['society_id']);
         }
 
         if (!$selectedSoc) {
@@ -236,6 +267,13 @@ class ApiController extends Controller {
         $host = $_SERVER['HTTP_HOST'] ?? 'chocolate-chimpanzee-235196.hostingersite.com';
         $baseUrl = "{$protocol}://{$host}";
 
+        // Attach select_api_url to each listed society for this user
+        $formattedUserSocieties = array_map(function($s) use ($baseUrl, $userId, $mobile) {
+            $sId = $s['id'] ?? $s['society_id'];
+            $s['select_api_url'] = "{$baseUrl}/api/v1/auth/select-society?user_id={$userId}&society_id={$sId}&mobile={$mobile}";
+            return $s;
+        }, $userSocieties);
+
         $isChairman = ($role === 'Chairman');
 
         $noticeUrlTemplate = "{$baseUrl}/api/v1/notices/add?society_id={$selectedSoc['id']}&phone_number={$mobile}&title={title}&content={content}&category=General&is_urgent=0";
@@ -246,14 +284,11 @@ class ApiController extends Controller {
 
         return $this->jsonResponse([
             'status' => 'success',
-            'message' => "Successfully selected Society '{$selectedSoc['name']}', Flat '{$flatNumber}', Role '{$role}'",
-            'selection_steps' => [
-                'step1_society' => [
-                    'id' => $selectedSoc['id'],
-                    'name' => $selectedSoc['name']
-                ],
-                'step2_flat_number' => $flatNumber,
-                'step3_role' => $role
+            'message' => "User ID {$userId} is listed in " . count($userSocieties) . " society(ies). Active society selected: '{$selectedSoc['name']}'",
+            'user' => [
+                'user_id' => $userId,
+                'name' => $user['name'] ?? 'User',
+                'mobile_number' => $mobile
             ],
             'active_society' => [
                 'id' => $selectedSoc['id'],
@@ -262,10 +297,14 @@ class ApiController extends Controller {
                 'committee_role' => $role,
                 'member_id' => $selectedSoc['member_id'] ?? null
             ],
+            'user_listed_societies_count' => count($userSocieties),
+            'user_listed_societies' => $formattedUserSocieties,
+            'grouped_societies' => $groupedSocieties,
             'step_api_urls' => [
-                'step1_select_society_url' => "{$baseUrl}/api/v1/auth/select-society?society_id={$selectedSoc['id']}&user_id={$userId}",
-                'step2_choose_flat_url' => "{$baseUrl}/api/v1/auth/select-society?society_id={$selectedSoc['id']}&user_id={$userId}&flat_number={flat_number}",
-                'step3_select_role_url' => "{$baseUrl}/api/v1/auth/select-society?society_id={$selectedSoc['id']}&user_id={$userId}&flat_number={$flatNumber}&role={role}"
+                'select_society_by_user_url' => "{$baseUrl}/api/v1/auth/select-society?user_id={$userId}&society_id={society_id}",
+                'step1_select_society_url' => "{$baseUrl}/api/v1/auth/select-society?user_id={$userId}&society_id={$selectedSoc['id']}",
+                'step2_choose_flat_url' => "{$baseUrl}/api/v1/auth/select-society?user_id={$userId}&society_id={$selectedSoc['id']}&flat_number={flat_number}",
+                'step3_select_role_url' => "{$baseUrl}/api/v1/auth/select-society?user_id={$userId}&society_id={$selectedSoc['id']}&flat_number={$flatNumber}&role={role}"
             ],
             'whatsapp_action' => [
                 'role' => $role,
