@@ -11,13 +11,13 @@ class Member extends Model {
     }
 
     public function getCommitteeMembers($societyId = 1) {
-        $stmt = $this->db->prepare("SELECT * FROM members WHERE society_id = :society_id AND committee_role != 'Resident' AND (owner_email IS NULL OR LOWER(TRIM(owner_email)) != 'maulik@septixtechnologies.com') ORDER BY FIELD(committee_role, 'Chairman', 'Secretary', 'Treasurer', 'Committee Member') ASC, flat_number ASC");
+        $stmt = $this->db->prepare("SELECT * FROM members WHERE society_id = :society_id AND (committee_role LIKE '%Chairman%' OR committee_role LIKE '%Secretary%' OR committee_role LIKE '%Treasurer%' OR committee_role LIKE '%Committee Member%') AND (owner_email IS NULL OR LOWER(TRIM(owner_email)) != 'maulik@septixtechnologies.com') ORDER BY flat_number ASC");
         $stmt->execute([':society_id' => $societyId]);
         return $stmt->fetchAll();
     }
 
     public function getResidents($societyId = 1) {
-        $stmt = $this->db->prepare("SELECT * FROM members WHERE society_id = :society_id AND (committee_role IS NULL OR committee_role = 'Resident') AND (owner_email IS NULL OR LOWER(TRIM(owner_email)) != 'maulik@septixtechnologies.com') ORDER BY flat_number ASC");
+        $stmt = $this->db->prepare("SELECT * FROM members WHERE society_id = :society_id AND (owner_email IS NULL OR LOWER(TRIM(owner_email)) != 'maulik@septixtechnologies.com') ORDER BY flat_number ASC");
         $stmt->execute([':society_id' => $societyId]);
         return $stmt->fetchAll();
     }
@@ -57,28 +57,42 @@ class Member extends Model {
         $member = $this->findById($memberId);
         if (!$member) return false;
 
-        $validRoles = ['Resident', 'Chairman', 'Secretary', 'Treasurer', 'Committee Member'];
-        if (!in_array($role, $validRoles)) {
-            $role = 'Resident';
+        $cleanRole = trim(str_replace('Resident', '', $role));
+        $cleanRole = trim(str_replace(',', '', $cleanRole));
+
+        if (empty($cleanRole) || $cleanRole === 'Resident') {
+            $finalRole = 'Resident';
+        } else {
+            $finalRole = "Resident, {$cleanRole}";
         }
 
         // Reset existing bearer if assigning single-person office bearer
-        if (in_array($role, ['Chairman', 'Secretary', 'Treasurer'])) {
-            $resetStmt = $this->db->prepare("UPDATE members SET committee_role = 'Resident' WHERE society_id = :society_id AND committee_role = :role");
+        if (in_array($cleanRole, ['Chairman', 'Secretary', 'Treasurer'])) {
+            $resetStmt = $this->db->prepare("UPDATE members SET committee_role = 'Resident' WHERE society_id = :society_id AND committee_role LIKE :rolePattern");
             $resetStmt->execute([
                 ':society_id' => $member['society_id'],
-                ':role' => $role
+                ':rolePattern' => "%{$cleanRole}%"
             ]);
         }
 
         $stmt = $this->db->prepare("UPDATE members SET committee_role = :role WHERE id = :id");
         return $stmt->execute([
-            ':role' => $role,
+            ':role' => $finalRole,
             ':id' => $memberId
         ]);
     }
 
     public function create($data) {
+        $inputRole = trim($data['committee_role'] ?? 'Resident');
+        $cleanRole = trim(str_replace('Resident', '', $inputRole));
+        $cleanRole = trim(str_replace(',', '', $cleanRole));
+
+        if (empty($cleanRole) || $cleanRole === 'Resident') {
+            $finalRole = 'Resident';
+        } else {
+            $finalRole = "Resident, {$cleanRole}";
+        }
+
         $stmt = $this->db->prepare("INSERT INTO members (
             society_id, user_id, flat_number, area_sqft, owner_name, owner_phone, owner_email,
             is_rented, tenant_name, tenant_phone, agreement_start, agreement_end, id_proof, committee_role
@@ -101,7 +115,7 @@ class Member extends Model {
             ':agreement_start' => !empty($data['agreement_start']) ? $data['agreement_start'] : null,
             ':agreement_end' => !empty($data['agreement_end']) ? $data['agreement_end'] : null,
             ':id_proof' => $data['id_proof'] ?? null,
-            ':committee_role' => $data['committee_role'] ?? 'Resident'
+            ':committee_role' => $finalRole
         ]);
 
         return $this->db->lastInsertId();

@@ -295,8 +295,22 @@ class Database {
                 $pdo->exec("ALTER TABLE `members` ADD COLUMN `society_id` INT NOT NULL DEFAULT 1 AFTER `id`");
             }
             if (!$this->columnExists($pdo, 'members', 'committee_role')) {
-                $pdo->exec("ALTER TABLE `members` ADD COLUMN `committee_role` ENUM('Resident', 'Chairman', 'Secretary', 'Treasurer', 'Committee Member') DEFAULT 'Resident'");
+                $pdo->exec("ALTER TABLE `members` ADD COLUMN `committee_role` VARCHAR(100) DEFAULT 'Resident'");
+            } else {
+                // Ensure column type can store multi-role strings like 'Resident, Chairman'
+                try {
+                    $pdo->exec("ALTER TABLE `members` MODIFY COLUMN `committee_role` VARCHAR(100) DEFAULT 'Resident'");
+                } catch (Exception $e) {}
             }
+
+            // Auto Data Migration: Ensure all members have Resident as default role
+            try {
+                $pdo->exec("UPDATE `members` SET `committee_role` = 'Resident, Chairman' WHERE `committee_role` = 'Chairman'");
+                $pdo->exec("UPDATE `members` SET `committee_role` = 'Resident, Secretary' WHERE `committee_role` = 'Secretary'");
+                $pdo->exec("UPDATE `members` SET `committee_role` = 'Resident, Treasurer' WHERE `committee_role` = 'Treasurer'");
+                $pdo->exec("UPDATE `members` SET `committee_role` = 'Resident, Committee Member' WHERE `committee_role` = 'Committee Member'");
+                $pdo->exec("UPDATE `members` SET `committee_role` = 'Resident' WHERE `committee_role` IS NULL OR TRIM(`committee_role`) = ''");
+            } catch (Exception $e) {}
             if (!$this->columnExists($pdo, 'members', 'user_id')) {
                 $pdo->exec("ALTER TABLE `members` ADD COLUMN `user_id` INT NULL");
             }
