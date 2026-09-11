@@ -91,26 +91,52 @@ class ApiController extends Controller {
         }
     }
 
-    // POST /api/v1/auth/user-login
+    // GET / POST /api/v1/auth/user-login?mobile=XXXXXXXXXX
     public function userLogin() {
         $input = $this->getJsonInput();
-        $mobile = trim($input['phone_number'] ?? $input['phone'] ?? $input['mobile_number'] ?? $input['mobile'] ?? $input['identifier'] ?? '');
-        $password = trim($input['password'] ?? '');
+        $mobile = trim($input['phone_number'] ?? $input['phone'] ?? $input['mobile_number'] ?? $input['mobile'] ?? $input['identifier'] ?? $_GET['mobile'] ?? $_GET['phone_number'] ?? $_GET['phone'] ?? '');
+        $password = trim($input['password'] ?? $_GET['password'] ?? '');
 
-        if (empty($mobile) || empty($password)) {
-            return $this->jsonResponse(['status' => 'error', 'message' => 'Mobile number and Password are required for User login.'], 400);
+        if (empty($mobile)) {
+            return $this->jsonResponse(['status' => 'error', 'message' => 'Mobile number is required for user login.'], 400);
         }
 
         $cleanMobile = preg_replace('/[^0-9]/', '', $mobile);
         $userModel = new User();
         $user = $userModel->findByMobile($cleanMobile);
 
-        if (!$user || !$userModel->verifyPassword($user, $password)) {
-            return $this->jsonResponse(['status' => 'error', 'message' => 'Invalid Mobile number or password.'], 401);
+        if (!$user) {
+            // Check members table if user record not in users table
+            $last10 = (strlen($cleanMobile) >= 10) ? substr($cleanMobile, -10) : $cleanMobile;
+            $stmtM = $userModel->getDb()->prepare("SELECT * FROM members WHERE owner_phone LIKE :p OR tenant_phone LIKE :p LIMIT 1");
+            $stmtM->execute([':p' => "%{$last10}"]);
+            $member = $stmtM->fetch();
+            if ($member) {
+                $user = [
+                    'id' => $member['user_id'] ?? $member['id'],
+                    'name' => $member['owner_name'] ?? $member['tenant_name'] ?? 'Resident',
+                    'mobile_number' => $cleanMobile,
+                    'password_hash' => null
+                ];
+            }
         }
 
-        // Credentials match! Check user's societies
+        if (!$user) {
+            return $this->jsonResponse([
+                'status' => 'error',
+                'message' => "No valid registered account or member found for mobile number '{$cleanMobile}'."
+            ], 404);
+        }
+
+        if (!empty($password) && !empty($user['password_hash'])) {
+            if (!$userModel->verifyPassword($user, $password)) {
+                return $this->jsonResponse(['status' => 'error', 'message' => 'Invalid password for this mobile number.'], 401);
+            }
+        }
+
+        // Valid user found! Retrieve user's societies
         $societies = $userModel->getUserSocieties($cleanMobile, $user['id']);
+        $groupedSocieties = $userModel->getUserSocietiesGrouped($cleanMobile, $user['id']);
         $societiesCount = count($societies);
         $requiresSelection = ($societiesCount > 1);
 
@@ -119,8 +145,8 @@ class ApiController extends Controller {
         $baseUrl = "{$protocol}://{$host}";
 
         // Attach dynamic select_api_url to each society option
-        $formattedSocieties = array_map(function($s) use ($baseUrl, $user) {
-            $s['select_api_url'] = "{$baseUrl}/api/v1/auth/select-society?society_id={$s['id']}&user_id={$user['id']}";
+        $formattedSocieties = array_map(function($s) use ($baseUrl, $user, $cleanMobile) {
+            $s['select_api_url'] = "{$baseUrl}/api/v1/auth/select-society?society_id={$s['id']}&user_id={$user['id']}&mobile={$cleanMobile}";
             return $s;
         }, $societies);
 
@@ -144,18 +170,21 @@ class ApiController extends Controller {
 
         return $this->jsonResponse([
             'status' => 'success',
-            'message' => 'Credentials verified successfully.',
-            'requires_society_selection' => $requiresSelection,
-            'select_society_api_url' => "{$baseUrl}/api/v1/auth/select-society?society_id={society_id}&user_id={$user['id']}",
-            'redirect_url' => $requiresSelection ? '/select-society' : '/dashboard',
+            'message' => "Valid user found for mobile number '{$cleanMobile}'.",
             'user' => [
                 'id' => $user['id'],
                 'name' => $user['name'],
                 'mobile_number' => $user['mobile_number'],
                 'is_admin' => false
             ],
+            'requires_society_selection' => $requiresSelection,
+            'step1_select_society_api_url' => "{$baseUrl}/api/v1/auth/select-society?society_id={society_id}&user_id={$user['id']}&mobile={$cleanMobile}",
+            'step2_choose_flat_api_url' => "{$baseUrl}/api/v1/auth/select-society?society_id={society_id}&user_id={$user['id']}&mobile={$cleanMobile}&flat_number={flat_number}",
+            'step3_select_role_api_url' => "{$baseUrl}/api/v1/auth/select-society?society_id={society_id}&user_id={$user['id']}&mobile={$cleanMobile}&flat_number={flat_number}&role={role}",
+            'redirect_url' => $requiresSelection ? '/select-society' : '/dashboard',
             'societies_count' => $societiesCount,
-            'societies' => $formattedSocieties
+            'societies' => $formattedSocieties,
+            'grouped_societies' => $groupedSocieties
         ]);
     }
 
