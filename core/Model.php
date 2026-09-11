@@ -9,4 +9,8 @@ class Model {
         $database = new Database();
         $this->db = $database->getConnection();
     }
+
+    public function getDb() {
+        return $this->db;
+    }
 }
